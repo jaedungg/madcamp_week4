@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, memo, ReactNode, ChangeEvent, FormEvent, forwardRef } from 'react';
 import { motion, useAnimation, useInView, useMotionTemplate, useMotionValue } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, Chrome, Github, Sparkles, PenTool, MessageSquare, Zap } from 'lucide-react';
+import { signIn } from 'next-auth/react';
 import { cn } from '@/lib/utils';
 
 // ==================== Input Component ====================
@@ -286,13 +287,20 @@ const AIWritingAssistantLogin = memo(function AIWritingAssistantLogin() {
     setIsLoading(true);
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log('Login successful:', { ...formData, rememberMe });
-      
-      // Redirect to editor after successful login
-      window.location.href = '/editor';
+      const res = await signIn('credentials', {
+        redirect: false,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (res?.ok) {
+        window.location.href = '/editor'; // 로그인 성공 시 이동
+      } else {
+        alert('이메일 또는 비밀번호가 올바르지 않습니다.');
+      }
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error('로그인 오류:', error);
+      alert('로그인 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
