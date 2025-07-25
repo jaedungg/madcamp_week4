@@ -1,23 +1,27 @@
-import { NextRequest, NextResponse } from 'next/server';
-
-const DUMMY_USER = {
-  id: 1,
-  name: '관리자',
-  email: 'admin@example.com',
-  password: '111111', // 실제론 DB에서 bcrypt 등으로 비교해야 함
-};
+import { NextRequest, NextResponse } from "next/server";
+import pool from "@/lib/db";
+import bcrypt from "bcrypt";
 
 export async function POST(req: NextRequest) {
   const { email, password } = await req.json();
+  console.log("입력값:", email, password);
 
-  if (email === DUMMY_USER.email && password === DUMMY_USER.password) {
-    // 비밀번호는 실제 프로젝트에서는 암호화하고 비교해야 안전합니다.
-    const { password: _, ...userWithoutPassword } = DUMMY_USER;
-    return NextResponse.json(userWithoutPassword);
+  try {
+    const { rows } = await pool.query(
+      `SELECT * FROM users WHERE email = $1`,
+      [email]
+    );
+    console.log("users:", rows);
+
+    const user = rows[0];
+    if (!user) return NextResponse.json(null, { status: 401 });
+
+    const isValid = await bcrypt.compare(password, user.password);
+    // if (!isValid) return NextResponse.json(null, { status: 401 }); // TODO: 회원가입 구현 이후에 활성화
+
+    return NextResponse.json({ id: user.id, email: user.email });
+  } catch (error) {
+    console.error("Login error:", error);
+    return NextResponse.json(null, { status: 500 });
   }
-
-  return NextResponse.json(
-    { error: '이메일 또는 비밀번호가 틀렸습니다.' },
-    { status: 401 }
-  );
 }
