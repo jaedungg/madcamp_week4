@@ -15,6 +15,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { signOut } from 'next-auth/react';
 
 const menuItems = [
   {
@@ -139,6 +140,7 @@ export default function DashboardSidebar() {
         <motion.button
           whileHover={{ scale: 1.02 }}
           className="w-full flex items-center gap-3 p-3 rounded-lg text-left text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          onClick={() => signOut({ callbackUrl: '/login' })}
         >
           <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
             <User className="w-4 h-4 text-white" />

@@ -4,8 +4,16 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Save, Share, MoreHorizontal } from 'lucide-react';
 import AIEditor from '@/components/editor/AIEditor';
+import { useSession } from 'next-auth/react';
 
 export default function EditorPage() {
+  const { data: session } = useSession();
+  if (session) {
+    console.log(session.user?.email);
+  } else {
+    console.log("session not found");
+  }
+
   const [content, setContent] = useState('');
   const [documentTitle, setDocumentTitle] = useState('제목 없는 문서');
   const [isSaving, setIsSaving] = useState(false);

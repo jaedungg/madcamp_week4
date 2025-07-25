@@ -3,7 +3,9 @@
 import React, { useState, useRef, useEffect, memo, ReactNode, ChangeEvent, FormEvent, forwardRef } from 'react';
 import { motion, useAnimation, useInView, useMotionTemplate, useMotionValue } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, Chrome, Github, Sparkles, PenTool, MessageSquare, Zap } from 'lucide-react';
+import { signIn } from 'next-auth/react';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 // ==================== Input Component ====================
 
@@ -286,13 +288,20 @@ const AIWritingAssistantLogin = memo(function AIWritingAssistantLogin() {
     setIsLoading(true);
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log('Login successful:', { ...formData, rememberMe });
+      const res = await signIn('credentials', {
+        redirect: false,
+        email: formData.email,
+        password: formData.password,
+      });
 
-      // Redirect to editor after successful login
-      window.location.href = '/editor';
+      if (res?.ok) {
+        window.location.href = '/editor'; // 로그인 성공 시 이동
+      } else {
+        alert('이메일 또는 비밀번호가 올바르지 않습니다.');
+      }
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error('로그인 오류:', error);
+      alert('로그인 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -323,44 +332,24 @@ const AIWritingAssistantLogin = memo(function AIWritingAssistantLogin() {
 
               <OrbitingCircles
                 className="size-[50px] border-none bg-transparent"
-                duration={20}
-                delay={20}
-                radius={120}
-                path={false}
-              >
-                <PenTool className="w-6 h-6 text-blue-500" />
-              </OrbitingCircles>
-
-              <OrbitingCircles
-                className="size-[50px] border-none bg-transparent"
-                duration={20}
+                duration={15}
                 delay={10}
-                radius={120}
+                radius={180}
                 path={false}
               >
-                <MessageSquare className="w-6 h-6 text-purple-500" />
+                <PenTool className="w-6 h-6 text-purple-500" />
               </OrbitingCircles>
 
               <OrbitingCircles
                 className="size-[50px] border-none bg-transparent"
                 duration={20}
                 delay={0}
-                radius={120}
+                radius={140}
                 path={false}
               >
-                <Sparkles className="w-6 h-6 text-pink-500" />
+                <Sparkles className="w-6 h-6 text-blue-500" />
               </OrbitingCircles>
 
-              <OrbitingCircles
-                className="size-[50px] border-none bg-transparent"
-                duration={25}
-                delay={15}
-                radius={180}
-                path={false}
-                reverse
-              >
-                <Zap className="w-6 h-6 text-yellow-500" />
-              </OrbitingCircles>
             </div>
           </div>
 
@@ -518,10 +507,10 @@ const AIWritingAssistantLogin = memo(function AIWritingAssistantLogin() {
 
           <BoxReveal boxColor="hsl(var(--primary))" duration={0.3}>
             <p className="text-center text-sm text-muted-foreground">
-              계정이 없으신가요?{' '}
-              <button className="text-primary hover:underline font-medium">
-                무료로 가입하기
-              </button>
+              Dont have an account?{' '}
+              <Link href="/signup" className="text-primary hover:underline font-medium">
+                회원가입하기
+              </Link>
             </p>
           </BoxReveal>
         </div>
