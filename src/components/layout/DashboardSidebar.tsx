@@ -2,40 +2,41 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { 
-  PenTool, 
-  FileText, 
-  Plus, 
-  Clock, 
-  BookTemplate, 
-  Settings, 
+import {
+  PenTool,
+  FileText,
+  Plus,
+  Clock,
+  BookTemplate,
+  Settings,
   User,
   Sparkles,
   Mail,
   MessageSquare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { signOut } from 'next-auth/react';
 
 const menuItems = [
   {
     icon: Plus,
-    label: 'New Document',
+    label: '새 문서',
     href: '/editor',
     primary: true
   },
   {
     icon: FileText,
-    label: 'All Documents',
+    label: '모든 문서',
     href: '/documents'
   },
   {
     icon: Clock,
-    label: 'Recent',
+    label: '최근 문서',
     href: '/recent'
   },
   {
     icon: BookTemplate,
-    label: 'Templates',
+    label: '템플릿',
     href: '/templates'
   }
 ];
@@ -43,17 +44,17 @@ const menuItems = [
 const templateCategories = [
   {
     icon: Mail,
-    label: 'Email',
+    label: '이메일',
     count: 12
   },
   {
     icon: MessageSquare,
-    label: 'Letters',
+    label: '편지',
     count: 8
   },
   {
     icon: PenTool,
-    label: 'Creative',
+    label: '창작글',
     count: 6
   }
 ];
@@ -68,8 +69,8 @@ export default function DashboardSidebar() {
             <Sparkles className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-foreground">AI Writer</h1>
-            <p className="text-xs text-muted-foreground">Intelligent Assistant</p>
+            <h1 className="text-lg font-bold text-foreground">프롬</h1>
+            <p className="text-xs text-muted-foreground">AI 글쓰기 도우미</p>
           </div>
         </div>
       </div>
@@ -100,7 +101,7 @@ export default function DashboardSidebar() {
         <div className="pt-6">
           <div className="px-3 pb-2">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Quick Templates
+              빠른 템플릿
             </h3>
           </div>
           <div className="space-y-1">
@@ -133,19 +134,20 @@ export default function DashboardSidebar() {
           className="w-full flex items-center gap-3 p-3 rounded-lg text-left text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
         >
           <Settings className="w-5 h-5" />
-          <span className="font-medium">Settings</span>
+          <span className="font-medium">설정</span>
         </motion.button>
-        
+
         <motion.button
           whileHover={{ scale: 1.02 }}
           className="w-full flex items-center gap-3 p-3 rounded-lg text-left text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          onClick={() => signOut({ callbackUrl: '/login' })}
         >
           <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
             <User className="w-4 h-4 text-white" />
           </div>
           <div className="flex-1">
-            <div className="font-medium text-foreground">John Doe</div>
-            <div className="text-xs text-muted-foreground">Free Plan</div>
+            <div className="font-medium text-foreground">김프롬</div>
+            <div className="text-xs text-muted-foreground">무료 플랜</div>
           </div>
         </motion.button>
       </div>

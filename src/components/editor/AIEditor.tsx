@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { motion } from 'framer-motion';
@@ -16,10 +16,17 @@ import {
   Type,
   Heading1,
   Heading2,
-  Heading3
+  Heading3,
+  Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CommandPalette from './CommandPalette';
+import SpeechRecognitionButton from './SpeechRecognitionButton';
+import TextPredictionOverlay from './TextPredictionOverlay';
+import PredictionToggle from './PredictionToggle';
+import { useTextPrediction } from '@/hooks/useTextPrediction';
+import { usePredictionEnabled, useTogglePrediction } from '@/stores/settingsStore';
+import { Editor } from '@tiptap/core';
 
 interface ToolbarButtonProps {
   onClick: () => void;
@@ -59,18 +66,33 @@ interface AIEditorProps {
   onChange?: (content: string) => void;
   placeholder?: string;
   className?: string;
+  onPredictionError?: (error: string) => void;
 }
 
-type Command = { id: string; label: string; /* 필요시 추가 필드 */ };
+interface Command {
+  id: string;
+  label: string;
+  description: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  category: 'templates' | 'ai' | 'formatting';
+  action: (editor?: Editor) => void | Promise<void>;
+  requiresSelection?: boolean;
+  requiresText?: boolean;
+}
 
 export default function AIEditor({
   content = '',
   onChange,
-  placeholder = "Start writing or type '/' for AI commands...",
-  className
+  placeholder = "글을 작성하거나 '/'를 입력해 AI 명령어를 사용하세요",
+  className,
+  onPredictionError
 }: AIEditorProps) {
+  // store에서 예측 설정 가져오기
+  const enablePrediction = usePredictionEnabled();
+  const togglePrediction = useTogglePrediction();
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [commandPalettePosition, setCommandPalettePosition] = useState({ x: 0, y: 0 });
+  const editorContainerRef = useRef<HTMLDivElement>(null);
 
   const handleSlashCommand = useCallback(() => {
     // Get current cursor position for command palette placement
@@ -125,35 +147,85 @@ export default function AIEditor({
       const html = editor.getHTML();
       onChange?.(html);
     },
-    immediatelyRender: false, // 이 줄 추가!
+    immediatelyRender: false,
   }, [handleSlashCommand]);
 
-  const handleCommandSelect = useCallback((command: Command) => {
+  // 텍스트 예측 훅 사용
+  const prediction = useTextPrediction(editor, {
+    enabled: enablePrediction,
+    onError: onPredictionError
+  });
+
+  // 키보드 이벤트 처리를 위한 useEffect
+  useEffect(() => {
+    if (!editor) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Tab 키로 예측 텍스트 적용
+      if (event.key === 'Tab' && prediction.isVisible) {
+        event.preventDefault();
+        prediction.applyPrediction();
+        return;
+      }
+
+      // Escape 키로 예측 텍스트 취소
+      if (event.key === 'Escape' && prediction.isVisible) {
+        event.preventDefault();
+        prediction.clearPrediction();
+        return;
+      }
+
+      // 다른 키 입력 시 예측 텍스트 지우기 (방향키, 수정키는 제외)
+      const preserveKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Shift', 'Control', 'Alt', 'Meta', 'Tab', 'Escape'];
+      if (!preserveKeys.includes(event.key) && prediction.isVisible) {
+        // 약간의 지연을 두어 키 입력이 처리된 후 예측 지우기
+        setTimeout(() => {
+          prediction.clearPrediction();
+        }, 0);
+      }
+    };
+
+    // 에디터 DOM에 키보드 이벤트 리스너 추가
+    const editorElement = editor.view.dom;
+    editorElement.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      editorElement.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [editor, prediction]);
+
+  // 전역 키보드 단축키 처리 (Ctrl+Shift+P로 예측 토글)
+  useEffect(() => {
+    const handleGlobalKeydown = (event: KeyboardEvent) => {
+      // Ctrl+Shift+P로 예측 토글
+      if (event.ctrlKey && event.shiftKey && event.key === 'P') {
+        event.preventDefault();
+        togglePrediction();
+        
+        // 간단한 시각적 피드백
+        if ('vibrate' in navigator) {
+          navigator.vibrate(50);
+        }
+      }
+    };
+
+    // 전역 이벤트 리스너 등록
+    document.addEventListener('keydown', handleGlobalKeydown);
+
+    return () => {
+      document.removeEventListener('keydown', handleGlobalKeydown);
+    };
+  }, [togglePrediction]);
+
+  const handleCommandSelect = useCallback((_command: Command) => {
     if (editor) {
       // Remove the "/" character that triggered the command
       const { from } = editor.state.selection;
       editor.chain().focus().deleteRange({ from: from - 1, to: from }).run();
-
-      // Insert template content or trigger AI action
-      // TODO: Implement actual command execution
-      const templateContent = getTemplateContent(command.id);
-      if (templateContent) {
-        editor.chain().focus().insertContent(templateContent).run();
-      }
     }
     setShowCommandPalette(false);
   }, [editor]);
 
-  const getTemplateContent = (commandId: string): string => {
-    const templates: Record<string, string> = {
-      'business-email': `<h3>Subject: [Your Subject Here]</h3><p>Dear [Recipient Name],</p><p>I hope this email finds you well. I am writing to...</p><p>Best regards,<br>[Your Name]</p>`,
-      'personal-letter': `<p>Dear [Name],</p><p>I hope you's doing well. I wanted to reach out because...</p><p>With warm regards,<br>[Your Name]</p>`,
-      'thank-you': `<p>Dear [Name],</p><p>Thank you so much for [specific reason]. Your [help/support/kindness] meant a lot to me...</p><p>Gratefully yours,<br>[Your Name]</p>`,
-      'job-application': `<p>Dear Hiring Manager,</p><p>I am writing to express my interest in the [Position Title] role at [Company Name]. With my background in [relevant experience]...</p><p>Sincerely,<br>[Your Name]</p>`,
-      'casual-message': `<p>Hey [Name]!</p><p>Hope you's doing great! I just wanted to [reason for message]...</p><p>Talk soon!<br>[Your Name]</p>`
-    };
-    return templates[commandId] || '';
-  };
 
   if (!editor) {
     return (
@@ -268,8 +340,19 @@ export default function AIEditor({
           </ToolbarButton>
         </div>
 
-        {/* AI Trigger Button */}
-        <div className="ml-auto">
+        {/* Speech Recognition & AI Buttons */}
+        <div className="ml-auto flex items-center gap-2">
+          <SpeechRecognitionButton
+            editor={editor}
+            onTranscriptChange={(transcript, isInterim) => {
+              // Handle transcript changes if needed
+              console.log('Transcript:', transcript, 'Interim:', isInterim);
+            }}
+          />
+
+          {/* AI 예측 토글 버튼 */}
+          <PredictionToggle />
+
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -286,7 +369,7 @@ export default function AIEditor({
       </div>
 
       {/* Editor */}
-      <div className="relative">
+      <div className="relative" ref={editorContainerRef}>
         <EditorContent
           editor={editor}
           placeholder={placeholder}
@@ -298,20 +381,48 @@ export default function AIEditor({
             {placeholder}
           </div>
         )}
+
+        {/* Text Prediction Overlay */}
+        {enablePrediction && (
+          <TextPredictionOverlay
+            editor={editor}
+            prediction={prediction.prediction}
+            context={prediction.context}
+            isVisible={prediction.isVisible}
+            className="absolute inset-0"
+          />
+        )}
       </div>
 
       {/* Status Bar */}
       <div className="flex items-center justify-between text-xs text-muted-foreground p-2 bg-muted/50 rounded-lg">
         <div className="flex items-center gap-4">
           <span>
-            {editor.storage.characterCount?.characters() || 0} characters
+            {editor.storage.characterCount?.characters() || 0}자
           </span>
           <span>
-            {editor.storage.characterCount?.words() || 0} words
+            {editor.storage.characterCount?.words() || 0}단어
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span>Type &apos;/&apos; for AI commands</span>
+          <span>&apos;/&apos;를 입력해 AI 명령어 사용</span>
+          <span>•</span>
+          <span 
+            className="flex items-center gap-1 cursor-help" 
+            title="Ctrl+Shift+P로 토글 가능"
+          >
+            <Zap className={cn(
+              "w-3 h-3 transition-colors",
+              enablePrediction ? "text-blue-500" : "text-muted-foreground"
+            )} />
+            {enablePrediction ? (
+              prediction.isLoading ? '예측 중...' :
+              prediction.isVisible ? 'Tab으로 적용' :
+              'AI 예측 활성'
+            ) : (
+              'AI 예측 비활성'
+            )}
+          </span>
         </div>
       </div>
 
@@ -321,6 +432,7 @@ export default function AIEditor({
         onClose={() => setShowCommandPalette(false)}
         onCommand={handleCommandSelect}
         position={commandPalettePosition}
+        editor={editor}
       />
     </div>
   );

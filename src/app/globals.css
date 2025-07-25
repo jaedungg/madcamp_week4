@@ -8,6 +8,12 @@
   --muted-foreground: #6b7280;
   --accent: #f3f4f6;
   --border: #e5e7eb;
+  
+  /* Speech Recognition Colors */
+  --speech-recording: #ef4444;
+  --speech-processing: #f59e0b;
+  --speech-success: #10b981;
+  --speech-error: #ef4444;
 }
 
 @theme inline {
@@ -57,4 +63,117 @@ body {
 /* Input focus styles */
 .shadow-input {
   box-shadow: 0px 2px 3px -1px rgba(0,0,0,0.1), 0px 1px 0px 0px rgba(25,28,33,0.02), 0px 0px 0px 1px rgba(25,28,33,0.08);
+}
+
+/* Speech Recognition Animations and Styles */
+@keyframes speech-pulse {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes speech-wave {
+  0%, 100% {
+    transform: scaleY(0.5);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes speech-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(239, 68, 68, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.8), 0 0 30px rgba(239, 68, 68, 0.4);
+  }
+}
+
+.speech-recording {
+  animation: speech-pulse 1.5s ease-in-out infinite;
+}
+
+.speech-recording-glow {
+  animation: speech-glow 1.5s ease-in-out infinite;
+}
+
+.speech-wave {
+  animation: speech-wave 0.8s ease-in-out infinite;
+}
+
+.speech-wave:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.speech-wave:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.speech-wave:nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+/* Speech Recognition Tooltip */
+.speech-tooltip {
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  font-size: 12px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  z-index: 1000;
+  position: absolute;
+  pointer-events: none;
+}
+
+.speech-tooltip::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.9);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+/* Voice waveform visualization */
+.voice-waveform {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  height: 16px;
+}
+
+.voice-waveform .bar {
+  width: 2px;
+  background: currentColor;
+  border-radius: 1px;
+  animation: speech-wave 1.2s ease-in-out infinite;
+}
+
+/* Accessibility improvements */
+.speech-button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Dark mode adjustments for speech recognition */
+@media (prefers-color-scheme: dark) {
+  .speech-tooltip {
+    background: rgba(255, 255, 255, 0.9);
+    color: black;
+  }
+  
+  .speech-tooltip::before {
+    background: rgba(255, 255, 255, 0.9);
+  }
 }
