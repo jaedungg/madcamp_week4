@@ -3,11 +3,21 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --primary: 59 130 246;
+  --primary-foreground: #ffffff;
+  --muted-foreground: #6b7280;
+  --accent: #f3f4f6;
+  --border: #e5e7eb;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary: rgb(var(--primary));
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-border: var(--border);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -16,6 +26,11 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --primary: 59 130 246;
+    --primary-foreground: #000000;
+    --muted-foreground: #9ca3af;
+    --accent: #1f2937;
+    --border: #374151;
   }
 }
 
@@ -23,4 +38,23 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Custom animations for the login component */
+@keyframes orbit {
+  0% {
+    transform: rotate(0deg) translateY(calc(var(--radius) * 1px)) rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg) translateY(calc(var(--radius) * 1px)) rotate(-360deg);
+  }
+}
+
+.animate-orbit {
+  animation: orbit calc(var(--duration) * 1s) linear infinite;
+}
+
+/* Input focus styles */
+.shadow-input {
+  box-shadow: 0px 2px 3px -1px rgba(0,0,0,0.1), 0px 1px 0px 0px rgba(25,28,33,0.02), 0px 0px 0px 1px rgba(25,28,33,0.08);
 }
