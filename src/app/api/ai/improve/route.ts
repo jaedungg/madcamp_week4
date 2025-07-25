@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateText } from '@/lib/ai/openai';
+import { generateText } from '@/lib/ai/gemini';
 import { IMPROVE_SYSTEM_PROMPT } from '@/lib/ai/prompts';
 import type { ImproveRequest } from '@/lib/ai/types';
 

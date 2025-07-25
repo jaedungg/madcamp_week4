@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateText } from '@/lib/ai/openai';
+import { generateText } from '@/lib/ai/gemini';
 import { getPromptTemplate, interpolatePrompt } from '@/lib/ai/prompts';
 import type { GenerateRequest } from '@/lib/ai/types';
 

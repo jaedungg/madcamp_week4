@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateText } from '@/lib/ai/openai';
+import { generateText } from '@/lib/ai/gemini';
 import { TONE_CHANGE_SYSTEM_PROMPT } from '@/lib/ai/prompts';
 import type { ToneChangeRequest } from '@/lib/ai/types';
 
