@@ -288,6 +288,9 @@ const AIWritingAssistantLogin = memo(function AIWritingAssistantLogin() {
     try {
       await new Promise(resolve => setTimeout(resolve, 1500));
       console.log('Login successful:', { ...formData, rememberMe });
+      
+      // Redirect to editor after successful login
+      window.location.href = '/editor';
     } catch (error) {
       console.error('Login failed:', error);
     } finally {

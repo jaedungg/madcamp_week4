@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 
 export default function Home() {
-  // Redirect to login page for now
-  redirect('/login');
+  // Redirect to editor page - users will be redirected to login if not authenticated
+  redirect('/editor');
 }
