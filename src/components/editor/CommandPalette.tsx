@@ -1,13 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Mail, 
-  MessageSquare, 
-  PenTool, 
-  Heart, 
-  Briefcase, 
+import {
+  Mail,
+  MessageSquare,
+  Heart,
+  Briefcase,
   Coffee,
   Sparkles,
   Type,
@@ -21,7 +20,7 @@ interface Command {
   id: string;
   label: string;
   description: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   category: 'templates' | 'ai' | 'formatting';
   action: () => void;
 }
@@ -75,7 +74,7 @@ const commands: Command[] = [
     category: 'templates',
     action: () => console.log('Casual message')
   },
-  
+
   // AI Commands
   {
     id: 'improve-writing',
@@ -111,17 +110,23 @@ const commands: Command[] = [
   }
 ];
 
-export default function CommandPalette({ 
-  isOpen, 
-  onClose, 
-  onCommand, 
-  position = { x: 0, y: 0 } 
+export default function CommandPalette({
+  isOpen,
+  onClose,
+  onCommand,
+  position = { x: 0, y: 0 }
 }: CommandPaletteProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [filteredCommands, setFilteredCommands] = useState(commands);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleCommandSelect = useCallback((command: Command) => {
+    onCommand(command);
+    onClose();
+    setSearchQuery('');
+  }, [onCommand, onClose]);
 
   // Filter commands based on search query
   useEffect(() => {
@@ -148,13 +153,13 @@ export default function CommandPalette({
       switch (e.key) {
         case 'ArrowDown':
           e.preventDefault();
-          setSelectedIndex(prev => 
+          setSelectedIndex(prev =>
             prev < filteredCommands.length - 1 ? prev + 1 : 0
           );
           break;
         case 'ArrowUp':
           e.preventDefault();
-          setSelectedIndex(prev => 
+          setSelectedIndex(prev =>
             prev > 0 ? prev - 1 : filteredCommands.length - 1
           );
           break;
@@ -173,7 +178,7 @@ export default function CommandPalette({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, selectedIndex, filteredCommands, onClose]);
+  }, [isOpen, selectedIndex, filteredCommands, onClose, handleCommandSelect]);
 
   // Handle click outside
   useEffect(() => {
@@ -189,12 +194,6 @@ export default function CommandPalette({
 
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen, onClose]);
-
-  const handleCommandSelect = (command: Command) => {
-    onCommand(command);
-    onClose();
-    setSearchQuery('');
-  };
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -274,7 +273,7 @@ export default function CommandPalette({
                     )}>
                       <Icon className="w-4 h-4" />
                     </div>
-                    
+
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-sm">
@@ -288,7 +287,7 @@ export default function CommandPalette({
                         {command.description}
                       </p>
                     </div>
-                    
+
                     {index === selectedIndex && (
                       <div className="text-xs text-muted-foreground">
                         ↵
