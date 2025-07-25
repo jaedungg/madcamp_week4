@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CommandPalette from './CommandPalette';
+import SpeechRecognitionButton from './SpeechRecognitionButton';
 import { Editor } from '@tiptap/core';
 
 interface ToolbarButtonProps {
@@ -138,7 +139,7 @@ export default function AIEditor({
     immediatelyRender: false, // 이 줄 추가!
   }, [handleSlashCommand]);
 
-  const handleCommandSelect = useCallback((command: Command) => {
+  const handleCommandSelect = useCallback((_command: Command) => {
     if (editor) {
       // Remove the "/" character that triggered the command
       const { from } = editor.state.selection;
@@ -261,8 +262,16 @@ export default function AIEditor({
           </ToolbarButton>
         </div>
 
-        {/* AI Trigger Button */}
-        <div className="ml-auto">
+        {/* Speech Recognition & AI Buttons */}
+        <div className="ml-auto flex items-center gap-2">
+          <SpeechRecognitionButton 
+            editor={editor}
+            onTranscriptChange={(transcript, isInterim) => {
+              // Handle transcript changes if needed
+              console.log('Transcript:', transcript, 'Interim:', isInterim);
+            }}
+          />
+          
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
