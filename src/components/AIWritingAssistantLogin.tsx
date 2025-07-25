@@ -5,6 +5,7 @@ import { motion, useAnimation, useInView, useMotionTemplate, useMotionValue } fr
 import { Eye, EyeOff, Mail, Lock, Chrome, Github, Sparkles, PenTool, MessageSquare, Zap } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 // ==================== Input Component ====================
 
@@ -331,44 +332,24 @@ const AIWritingAssistantLogin = memo(function AIWritingAssistantLogin() {
 
               <OrbitingCircles
                 className="size-[50px] border-none bg-transparent"
-                duration={20}
-                delay={20}
-                radius={120}
-                path={false}
-              >
-                <PenTool className="w-6 h-6 text-blue-500" />
-              </OrbitingCircles>
-
-              <OrbitingCircles
-                className="size-[50px] border-none bg-transparent"
-                duration={20}
+                duration={15}
                 delay={10}
-                radius={120}
+                radius={180}
                 path={false}
               >
-                <MessageSquare className="w-6 h-6 text-purple-500" />
+                <PenTool className="w-6 h-6 text-purple-500" />
               </OrbitingCircles>
 
               <OrbitingCircles
                 className="size-[50px] border-none bg-transparent"
                 duration={20}
                 delay={0}
-                radius={120}
+                radius={140}
                 path={false}
               >
-                <Sparkles className="w-6 h-6 text-pink-500" />
+                <Sparkles className="w-6 h-6 text-blue-500" />
               </OrbitingCircles>
 
-              <OrbitingCircles
-                className="size-[50px] border-none bg-transparent"
-                duration={25}
-                delay={15}
-                radius={180}
-                path={false}
-                reverse
-              >
-                <Zap className="w-6 h-6 text-yellow-500" />
-              </OrbitingCircles>
             </div>
           </div>
 
@@ -527,9 +508,9 @@ const AIWritingAssistantLogin = memo(function AIWritingAssistantLogin() {
           <BoxReveal boxColor="hsl(var(--primary))" duration={0.3}>
             <p className="text-center text-sm text-muted-foreground">
               Dont have an account?{' '}
-              <button className="text-primary hover:underline font-medium">
-                Sign up for free
-              </button>
+              <Link href="/signup" className="text-primary hover:underline font-medium">
+                회원가입하기
+              </Link>
             </p>
           </BoxReveal>
         </div>
