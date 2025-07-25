@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Writer - Intelligent Writing Assistant",
-  description: "Express emotions through intelligent writing. Create perfect letters, emails, and messages with AI assistance that understands context and emotion.",
-  keywords: ["AI writing", "writing assistant", "email writing", "letter writing", "AI text generation"],
+  title: "프롬(From) - AI 글쓰기 도우미",
+  description: "마음을 전하는 AI 글쓰기 도우미 프롬. 편지, 이메일, 메시지를 감정과 목적에 맞게 자연스럽게 작성하세요.",
+  keywords: ["AI 글쓰기", "글쓰기 도우미", "이메일 작성", "편지 쓰기", "AI 텍스트 생성", "프롬"],
 };
 
 export default function RootLayout({

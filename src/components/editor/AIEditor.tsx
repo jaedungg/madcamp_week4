@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CommandPalette from './CommandPalette';
+import { Editor } from '@tiptap/core';
 
 interface ToolbarButtonProps {
   onClick: () => void;
@@ -61,12 +62,21 @@ interface AIEditorProps {
   className?: string;
 }
 
-type Command = { id: string; label: string; /* 필요시 추가 필드 */ };
+interface Command {
+  id: string;
+  label: string;
+  description: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  category: 'templates' | 'ai' | 'formatting';
+  action: (editor?: Editor) => void | Promise<void>;
+  requiresSelection?: boolean;
+  requiresText?: boolean;
+}
 
 export default function AIEditor({
   content = '',
   onChange,
-  placeholder = "Start writing or type '/' for AI commands...",
+  placeholder = "글을 작성하거나 '/'를 입력해 AI 명령어를 사용하세요...",
   className
 }: AIEditorProps) {
   const [showCommandPalette, setShowCommandPalette] = useState(false);
@@ -133,27 +143,10 @@ export default function AIEditor({
       // Remove the "/" character that triggered the command
       const { from } = editor.state.selection;
       editor.chain().focus().deleteRange({ from: from - 1, to: from }).run();
-
-      // Insert template content or trigger AI action
-      // TODO: Implement actual command execution
-      const templateContent = getTemplateContent(command.id);
-      if (templateContent) {
-        editor.chain().focus().insertContent(templateContent).run();
-      }
     }
     setShowCommandPalette(false);
   }, [editor]);
 
-  const getTemplateContent = (commandId: string): string => {
-    const templates: Record<string, string> = {
-      'business-email': `<h3>Subject: [Your Subject Here]</h3><p>Dear [Recipient Name],</p><p>I hope this email finds you well. I am writing to...</p><p>Best regards,<br>[Your Name]</p>`,
-      'personal-letter': `<p>Dear [Name],</p><p>I hope you's doing well. I wanted to reach out because...</p><p>With warm regards,<br>[Your Name]</p>`,
-      'thank-you': `<p>Dear [Name],</p><p>Thank you so much for [specific reason]. Your [help/support/kindness] meant a lot to me...</p><p>Gratefully yours,<br>[Your Name]</p>`,
-      'job-application': `<p>Dear Hiring Manager,</p><p>I am writing to express my interest in the [Position Title] role at [Company Name]. With my background in [relevant experience]...</p><p>Sincerely,<br>[Your Name]</p>`,
-      'casual-message': `<p>Hey [Name]!</p><p>Hope you's doing great! I just wanted to [reason for message]...</p><p>Talk soon!<br>[Your Name]</p>`
-    };
-    return templates[commandId] || '';
-  };
 
   if (!editor) {
     return (
@@ -304,14 +297,14 @@ export default function AIEditor({
       <div className="flex items-center justify-between text-xs text-muted-foreground p-2 bg-muted/50 rounded-lg">
         <div className="flex items-center gap-4">
           <span>
-            {editor.storage.characterCount?.characters() || 0} characters
+            {editor.storage.characterCount?.characters() || 0}자
           </span>
           <span>
-            {editor.storage.characterCount?.words() || 0} words
+            {editor.storage.characterCount?.words() || 0}단어
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span>Type &apos;/&apos; for AI commands</span>
+          <span>&apos;/&apos;를 입력해 AI 명령어 사용</span>
         </div>
       </div>
 
@@ -321,6 +314,7 @@ export default function AIEditor({
         onClose={() => setShowCommandPalette(false)}
         onCommand={handleCommandSelect}
         position={commandPalettePosition}
+        editor={editor}
       />
     </div>
   );

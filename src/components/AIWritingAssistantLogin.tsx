@@ -288,7 +288,7 @@ const AIWritingAssistantLogin = memo(function AIWritingAssistantLogin() {
     try {
       await new Promise(resolve => setTimeout(resolve, 1500));
       console.log('Login successful:', { ...formData, rememberMe });
-      
+
       // Redirect to editor after successful login
       window.location.href = '/editor';
     } catch (error) {
@@ -314,10 +314,10 @@ const AIWritingAssistantLogin = memo(function AIWritingAssistantLogin() {
             <div className="relative flex items-center justify-center w-full h-full">
               <div className="text-center space-y-4">
                 <div className="text-6xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  AI Writer
+                  FROM
                 </div>
                 <p className="text-lg text-muted-foreground">
-                  Express emotions through intelligent writing
+                  마음을 전하는 AI 글쓰기 도우미
                 </p>
               </div>
 
@@ -366,11 +366,11 @@ const AIWritingAssistantLogin = memo(function AIWritingAssistantLogin() {
 
           <div className="text-center space-y-2">
             <h2 className="text-2xl font-semibold text-foreground">
-              Craft Perfect Messages
+              완벽한 메시지를 작성하세요
             </h2>
             <p className="text-muted-foreground max-w-md">
-              Our AI understands emotions and context to help you write compelling letters,
-              emails, and messages that truly connect with your audience.
+              프롬의 AI가 감정과 상황을 이해하여 상대방의 마음에 전달되는
+              편지, 이메일, 메시지 작성을 도와드립니다.
             </p>
           </div>
         </div>
@@ -379,11 +379,11 @@ const AIWritingAssistantLogin = memo(function AIWritingAssistantLogin() {
         <div className="w-full max-w-md mx-auto space-y-6">
           <div className="text-center space-y-2">
             <BoxReveal boxColor="hsl(var(--primary))" duration={0.3}>
-              <h1 className="text-3xl font-bold text-foreground">Welcome back</h1>
+              <h1 className="text-3xl font-bold text-foreground">다시 오신 것을 환영합니다</h1>
             </BoxReveal>
             <BoxReveal boxColor="hsl(var(--primary))" duration={0.3}>
               <p className="text-muted-foreground">
-                Sign in to continue your writing journey
+                글쓰기 여정을 계속하려면 로그인하세요
               </p>
             </BoxReveal>
           </div>
@@ -415,7 +415,7 @@ const AIWritingAssistantLogin = memo(function AIWritingAssistantLogin() {
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with email
+                  또는 이메일로 계속하기
                 </span>
               </div>
             </div>
@@ -425,7 +425,7 @@ const AIWritingAssistantLogin = memo(function AIWritingAssistantLogin() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <BoxReveal boxColor="hsl(var(--primary))" duration={0.3}>
-                <Label htmlFor="email">Email address</Label>
+                <Label htmlFor="email">이메일 주소</Label>
               </BoxReveal>
               <BoxReveal boxColor="hsl(var(--primary))" duration={0.3} width="100%">
                 <div className="relative">
@@ -433,7 +433,7 @@ const AIWritingAssistantLogin = memo(function AIWritingAssistantLogin() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="Enter your email"
+                    placeholder="이메일을 입력하세요"
                     value={formData.email}
                     onChange={handleInputChange('email')}
                     className="pl-10"
@@ -447,7 +447,7 @@ const AIWritingAssistantLogin = memo(function AIWritingAssistantLogin() {
 
             <div className="space-y-2">
               <BoxReveal boxColor="hsl(var(--primary))" duration={0.3}>
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">비밀번호</Label>
               </BoxReveal>
               <BoxReveal boxColor="hsl(var(--primary))" duration={0.3} width="100%">
                 <div className="relative">
@@ -455,7 +455,7 @@ const AIWritingAssistantLogin = memo(function AIWritingAssistantLogin() {
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter your password"
+                    placeholder="비밀번호를 입력하세요"
                     value={formData.password}
                     onChange={handleInputChange('password')}
                     className="pl-10 pr-10"
@@ -485,14 +485,14 @@ const AIWritingAssistantLogin = memo(function AIWritingAssistantLogin() {
                     className="w-4 h-4 rounded border-border"
                   />
                   <Label htmlFor="remember" className="text-sm">
-                    Remember me
+                    로그인 상태 유지
                   </Label>
                 </div>
                 <button
                   type="button"
                   className="text-sm text-primary hover:underline"
                 >
-                  Forgot password?
+                  비밀번호를 잊으셨나요?
                 </button>
               </div>
             </BoxReveal>
@@ -506,10 +506,10 @@ const AIWritingAssistantLogin = memo(function AIWritingAssistantLogin() {
                 {isLoading ? (
                   <div className="flex items-center justify-center gap-2">
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Signing in...
+                    로그인 중...
                   </div>
                 ) : (
-                  'Sign in'
+                  '로그인'
                 )}
                 <BottomGradient />
               </button>
@@ -518,9 +518,9 @@ const AIWritingAssistantLogin = memo(function AIWritingAssistantLogin() {
 
           <BoxReveal boxColor="hsl(var(--primary))" duration={0.3}>
             <p className="text-center text-sm text-muted-foreground">
-              Dont have an account?{' '}
+              계정이 없으신가요?{' '}
               <button className="text-primary hover:underline font-medium">
-                Sign up for free
+                무료로 가입하기
               </button>
             </p>
           </BoxReveal>
