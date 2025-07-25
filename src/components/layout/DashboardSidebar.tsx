@@ -68,7 +68,7 @@ export default function DashboardSidebar() {
             <Sparkles className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-foreground">From</h1>
+            <h1 className="text-lg font-bold text-foreground">프롬</h1>
             <p className="text-xs text-muted-foreground">AI 글쓰기 도우미</p>
           </div>
         </div>
