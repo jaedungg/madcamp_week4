@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { motion } from 'framer-motion';
@@ -16,11 +16,16 @@ import {
   Type,
   Heading1,
   Heading2,
-  Heading3
+  Heading3,
+  Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CommandPalette from './CommandPalette';
 import SpeechRecognitionButton from './SpeechRecognitionButton';
+import TextPredictionOverlay from './TextPredictionOverlay';
+import PredictionToggle from './PredictionToggle';
+import { useTextPrediction } from '@/hooks/useTextPrediction';
+import { usePredictionEnabled, useTogglePrediction } from '@/stores/settingsStore';
 import { Editor } from '@tiptap/core';
 
 interface ToolbarButtonProps {
@@ -61,6 +66,7 @@ interface AIEditorProps {
   onChange?: (content: string) => void;
   placeholder?: string;
   className?: string;
+  onPredictionError?: (error: string) => void;
 }
 
 interface Command {
@@ -77,11 +83,16 @@ interface Command {
 export default function AIEditor({
   content = '',
   onChange,
-  placeholder = "글을 작성하거나 '/'를 입력해 AI 명령어를 사용하세요...",
-  className
+  placeholder = "글을 작성하거나 '/'를 입력해 AI 명령어를 사용하세요",
+  className,
+  onPredictionError
 }: AIEditorProps) {
+  // store에서 예측 설정 가져오기
+  const enablePrediction = usePredictionEnabled();
+  const togglePrediction = useTogglePrediction();
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [commandPalettePosition, setCommandPalettePosition] = useState({ x: 0, y: 0 });
+  const editorContainerRef = useRef<HTMLDivElement>(null);
 
   const handleSlashCommand = useCallback(() => {
     // Get current cursor position for command palette placement
@@ -136,8 +147,75 @@ export default function AIEditor({
       const html = editor.getHTML();
       onChange?.(html);
     },
-    immediatelyRender: false, // 이 줄 추가!
+    immediatelyRender: false,
   }, [handleSlashCommand]);
+
+  // 텍스트 예측 훅 사용
+  const prediction = useTextPrediction(editor, {
+    enabled: enablePrediction,
+    onError: onPredictionError
+  });
+
+  // 키보드 이벤트 처리를 위한 useEffect
+  useEffect(() => {
+    if (!editor) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Tab 키로 예측 텍스트 적용
+      if (event.key === 'Tab' && prediction.isVisible) {
+        event.preventDefault();
+        prediction.applyPrediction();
+        return;
+      }
+
+      // Escape 키로 예측 텍스트 취소
+      if (event.key === 'Escape' && prediction.isVisible) {
+        event.preventDefault();
+        prediction.clearPrediction();
+        return;
+      }
+
+      // 다른 키 입력 시 예측 텍스트 지우기 (방향키, 수정키는 제외)
+      const preserveKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Shift', 'Control', 'Alt', 'Meta', 'Tab', 'Escape'];
+      if (!preserveKeys.includes(event.key) && prediction.isVisible) {
+        // 약간의 지연을 두어 키 입력이 처리된 후 예측 지우기
+        setTimeout(() => {
+          prediction.clearPrediction();
+        }, 0);
+      }
+    };
+
+    // 에디터 DOM에 키보드 이벤트 리스너 추가
+    const editorElement = editor.view.dom;
+    editorElement.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      editorElement.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [editor, prediction]);
+
+  // 전역 키보드 단축키 처리 (Ctrl+Shift+P로 예측 토글)
+  useEffect(() => {
+    const handleGlobalKeydown = (event: KeyboardEvent) => {
+      // Ctrl+Shift+P로 예측 토글
+      if (event.ctrlKey && event.shiftKey && event.key === 'P') {
+        event.preventDefault();
+        togglePrediction();
+        
+        // 간단한 시각적 피드백
+        if ('vibrate' in navigator) {
+          navigator.vibrate(50);
+        }
+      }
+    };
+
+    // 전역 이벤트 리스너 등록
+    document.addEventListener('keydown', handleGlobalKeydown);
+
+    return () => {
+      document.removeEventListener('keydown', handleGlobalKeydown);
+    };
+  }, [togglePrediction]);
 
   const handleCommandSelect = useCallback((_command: Command) => {
     if (editor) {
@@ -264,14 +342,17 @@ export default function AIEditor({
 
         {/* Speech Recognition & AI Buttons */}
         <div className="ml-auto flex items-center gap-2">
-          <SpeechRecognitionButton 
+          <SpeechRecognitionButton
             editor={editor}
             onTranscriptChange={(transcript, isInterim) => {
               // Handle transcript changes if needed
               console.log('Transcript:', transcript, 'Interim:', isInterim);
             }}
           />
-          
+
+          {/* AI 예측 토글 버튼 */}
+          <PredictionToggle />
+
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -288,7 +369,7 @@ export default function AIEditor({
       </div>
 
       {/* Editor */}
-      <div className="relative">
+      <div className="relative" ref={editorContainerRef}>
         <EditorContent
           editor={editor}
           placeholder={placeholder}
@@ -299,6 +380,17 @@ export default function AIEditor({
           <div className="absolute top-6 left-6 text-muted-foreground pointer-events-none">
             {placeholder}
           </div>
+        )}
+
+        {/* Text Prediction Overlay */}
+        {enablePrediction && (
+          <TextPredictionOverlay
+            editor={editor}
+            prediction={prediction.prediction}
+            context={prediction.context}
+            isVisible={prediction.isVisible}
+            className="absolute inset-0"
+          />
         )}
       </div>
 
@@ -314,6 +406,23 @@ export default function AIEditor({
         </div>
         <div className="flex items-center gap-2">
           <span>&apos;/&apos;를 입력해 AI 명령어 사용</span>
+          <span>•</span>
+          <span 
+            className="flex items-center gap-1 cursor-help" 
+            title="Ctrl+Shift+P로 토글 가능"
+          >
+            <Zap className={cn(
+              "w-3 h-3 transition-colors",
+              enablePrediction ? "text-blue-500" : "text-muted-foreground"
+            )} />
+            {enablePrediction ? (
+              prediction.isLoading ? '예측 중...' :
+              prediction.isVisible ? 'Tab으로 적용' :
+              'AI 예측 활성'
+            ) : (
+              'AI 예측 비활성'
+            )}
+          </span>
         </div>
       </div>
 

@@ -46,13 +46,48 @@ export interface PromptTemplate {
   }>;
 }
 
+export interface PredictRequest {
+  text: string;
+  cursorPosition?: number;
+  maxLength?: number;
+}
+
+export interface PredictResponse extends AIResponse {
+  prediction?: string;
+}
+
+export interface PredictionContext {
+  text: string;
+  cursorPosition: number;
+  textBeforeCursor: string;
+  textAfterCursor: string;
+  currentParagraph: string;
+  isAtEndOfLine: boolean;
+  isAtEndOfDocument: boolean;
+}
+
+export interface TextPredictionState {
+  prediction: string;
+  isLoading: boolean;
+  error: string | null;
+  context: PredictionContext | null;
+}
+
+export interface UseTextPredictionOptions {
+  debounceMs?: number;
+  maxLength?: number;
+  enabled?: boolean;
+  onError?: (error: string) => void;
+}
+
 export type AIAction = 
   | 'generate'
   | 'improve'
   | 'tone-change'
   | 'expand'
   | 'summarize'
-  | 'translate';
+  | 'translate'
+  | 'predict';
 
 export interface AIConfig {
   model: string;

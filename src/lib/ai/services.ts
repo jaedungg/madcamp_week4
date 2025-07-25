@@ -2,7 +2,8 @@ import type {
   GenerateRequest,
   ImproveRequest,
   ToneChangeRequest,
-  AIResponse
+  AIResponse,
+  PredictRequest
 } from './types';
 import { Editor } from '@tiptap/core';
 
@@ -164,6 +165,36 @@ export async function expandText(request: ExpandRequest): Promise<AIResponse> {
     return data;
   } catch (error) {
     console.error('Expand API 요청 오류:', error);
+    return {
+      success: false,
+      error: '네트워크 오류가 발생했습니다.'
+    };
+  }
+}
+
+/**
+ * AI 텍스트 예측 서비스
+ */
+export async function predictText(request: PredictRequest): Promise<AIResponse> {
+  try {
+    const response = await fetch('/api/ai/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: data.error || '텍스트 예측에 실패했습니다.'
+      };
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Predict API 요청 오류:', error);
     return {
       success: false,
       error: '네트워크 오류가 발생했습니다.'
