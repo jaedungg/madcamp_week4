@@ -36,6 +36,19 @@ export default function DocumentCard({
 }: DocumentCardProps) {
   const { toggleFavorite, markAsRecent } = useDocumentStore();
   const [showActions, setShowActions] = React.useState(false);
+  const [formattedDate, setFormattedDate] = React.useState('');
+
+  React.useEffect(() => {
+    setFormattedDate(
+      new Intl.DateTimeFormat('ko-KR', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(new Date(document.updatedAt))
+    );
+  }, [document.updatedAt]);
 
   const handleCardClick = () => {
     markAsRecent(document.id);
@@ -78,16 +91,6 @@ export default function DocumentCard({
     e.stopPropagation();
     setShowActions(false);
     onDelete?.(document);
-  };
-
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('ko-KR', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date);
   };
 
   const getStatusColor = (status: Document['status']) => {
@@ -151,7 +154,7 @@ export default function DocumentCard({
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
-                  {formatDate(document.updatedAt)}
+                  {formattedDate || String(document.updatedAt)}
                 </div>
                 <div className="flex items-center gap-1">
                   <Type className="w-3 h-3" />
@@ -378,7 +381,7 @@ export default function DocumentCard({
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1">
             <Calendar className="w-3 h-3" />
-            {formatDate(document.updatedAt)}
+            {formattedDate || String(document.updatedAt)}
           </div>
           <div className="flex items-center gap-1">
             <Type className="w-3 h-3" />
@@ -387,7 +390,7 @@ export default function DocumentCard({
         </div>
 
         {document.aiRequestsUsed > 0 && (
-          <div className="text-xs bg-gradient-to-r from-blue-500 to-purple-600 text-white px-2 py-1 rounded-full">
+          <div className="whitespace-nowrap text-xs bg-gradient-to-r from-blue-500 to-purple-600 text-white px-2 py-1 rounded-full">
             AI {document.aiRequestsUsed}회
           </div>
         )}

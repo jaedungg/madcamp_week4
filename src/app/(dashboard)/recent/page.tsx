@@ -301,7 +301,7 @@ export default function RecentDocumentsPage() {
                       onDelete={handleDeleteDocument}
                     />
                     {/* Recent badge */}
-                    <div className="absolute top-2 left-2 bg-primary/90 text-primary-foreground text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                    <div className="absolute top-2 right-2 bg-primary/90 text-primary-foreground text-xs px-2 py-1 rounded-full flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {formatRelativeTime(document.lastAccessedAt)}
                     </div>
