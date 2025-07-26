@@ -222,21 +222,21 @@ export default function DocumentCard({
                 <div className="py-1">
                   <button
                     onClick={handleEdit}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-accent"
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground bg-white hover:bg-accent"
                   >
                     <Edit3 className="w-4 h-4" />
                     편집
                   </button>
                   <button
                     onClick={handleDuplicate}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-accent"
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground bg-white hover:bg-accent"
                   >
                     <Copy className="w-4 h-4" />
                     복사
                   </button>
                   <button
                     onClick={handleDelete}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 bg-white hover:bg-red-50"
                   >
                     <Trash2 className="w-4 h-4" />
                     삭제
@@ -318,21 +318,21 @@ export default function DocumentCard({
                 <div className="py-1">
                   <button
                     onClick={handleEdit}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-accent"
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground bg-white hover:bg-accent"
                   >
                     <Edit3 className="w-4 h-4" />
                     편집
                   </button>
                   <button
                     onClick={handleDuplicate}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-accent"
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground bg-white hover:bg-accent"
                   >
                     <Copy className="w-4 h-4" />
                     복사
                   </button>
                   <button
                     onClick={handleDelete}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 bg-white hover:bg-red-50"
                   >
                     <Trash2 className="w-4 h-4" />
                     삭제
@@ -385,7 +385,7 @@ export default function DocumentCard({
             {document.wordCount.toLocaleString()}자
           </div>
         </div>
-        
+
         {document.aiRequestsUsed > 0 && (
           <div className="text-xs bg-gradient-to-r from-blue-500 to-purple-600 text-white px-2 py-1 rounded-full">
             AI {document.aiRequestsUsed}회

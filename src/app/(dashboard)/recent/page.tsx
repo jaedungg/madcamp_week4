@@ -23,19 +23,19 @@ export default function RecentDocumentsPage() {
   } = useDocumentStore();
 
   const { incrementDocumentCount } = useUserStore();
-  
+
   const [timeFilter, setTimeFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
   const recentDocuments = getRecentDocuments(50); // Get more recent documents
-  
+
   // Filter recent documents by time
   const filteredRecentDocuments = recentDocuments.filter(doc => {
     if (timeFilter === 'all') return true;
-    
+
     const now = new Date();
     const docDate = doc.lastAccessedAt;
-    
+
     switch (timeFilter) {
       case 'today':
         return docDate.toDateString() === now.toDateString();
@@ -94,7 +94,7 @@ export default function RecentDocumentsPage() {
     if (minutes < 60) return `${minutes}분 전`;
     if (hours < 24) return `${hours}시간 전`;
     if (days < 7) return `${days}일 전`;
-    
+
     return new Intl.DateTimeFormat('ko-KR', {
       month: 'short',
       day: 'numeric'
@@ -103,10 +103,10 @@ export default function RecentDocumentsPage() {
 
   const getActivityStats = () => {
     const now = new Date();
-    const today = recentDocuments.filter(doc => 
+    const today = recentDocuments.filter(doc =>
       doc.lastAccessedAt.toDateString() === now.toDateString()
     ).length;
-    
+
     const thisWeek = recentDocuments.filter(doc => {
       const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       return doc.lastAccessedAt >= weekAgo;
@@ -133,7 +133,7 @@ export default function RecentDocumentsPage() {
               최근 활동한 문서들을 확인하고 작업을 이어가세요
             </p>
           </div>
-          
+
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -230,7 +230,7 @@ export default function RecentDocumentsPage() {
               {filteredRecentDocuments.length}개 문서
             </div>
           </div>
-          
+
           <ViewToggle
             viewMode={viewMode}
             onViewModeChange={setViewMode}
@@ -319,7 +319,7 @@ export default function RecentDocumentsPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-card p-6 rounded-lg shadow-lg max-w-md mx-4"
+            className="bg-card bg-white p-6 rounded-lg shadow-lg max-w-md mx-4"
           >
             <h3 className="text-lg font-semibold text-foreground mb-3">
               문서 삭제

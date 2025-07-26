@@ -15,11 +15,11 @@ import {
   Star,
   Users
 } from 'lucide-react';
-import { 
-  Template, 
-  TEMPLATE_CATEGORY_LABELS, 
-  TEMPLATE_DIFFICULTY_LABELS, 
-  TEMPLATE_TONE_LABELS 
+import {
+  Template,
+  TEMPLATE_CATEGORY_LABELS,
+  TEMPLATE_DIFFICULTY_LABELS,
+  TEMPLATE_TONE_LABELS
 } from '@/types/template';
 import { DocumentCategory } from '@/types/document';
 import { useTemplateStore } from '@/stores/templateStore';
@@ -50,7 +50,7 @@ export default function TemplateCard({
   const handleUseTemplate = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (onUse) {
       onUse(template);
     } else {
@@ -253,7 +253,7 @@ export default function TemplateCard({
         )}>
           {TEMPLATE_CATEGORY_LABELS[template.category]}
         </span>
-        
+
         <span className={cn(
           'text-xs px-2 py-1 rounded-full font-medium',
           getDifficultyColor(template.difficulty)
@@ -298,7 +298,7 @@ export default function TemplateCard({
             약 {template.estimatedWords}자
           </div>
         </div>
-        
+
         {template.usageCount > 10 && (
           <div className="flex items-center gap-1 text-orange-600">
             <TrendingUp className="w-3 h-3" />

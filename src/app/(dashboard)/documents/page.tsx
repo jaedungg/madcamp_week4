@@ -35,7 +35,7 @@ export default function DocumentsPage() {
   } = useDocumentStore();
 
   const { incrementDocumentCount } = useUserStore();
-  
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
 
@@ -132,7 +132,7 @@ export default function DocumentsPage() {
 
   const handleEmptyStateAction = () => {
     const emptyType = getEmptyStateType();
-    
+
     switch (emptyType) {
       case 'search':
         setFilters({ searchTerm: '' });
@@ -159,7 +159,7 @@ export default function DocumentsPage() {
               총 {stats.totalDocuments}개의 문서 • {stats.totalWords.toLocaleString()}자
             </p>
           </div>
-          
+
           <div className="flex items-center gap-3">
             {/* Bulk Actions */}
             {selectedDocuments.length > 0 && (
@@ -209,7 +209,7 @@ export default function DocumentsPage() {
                 <Upload className="w-4 h-4" />
                 가져오기
               </motion.label>
-              
+
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -244,7 +244,7 @@ export default function DocumentsPage() {
               onReset={resetFilters}
             />
           </div>
-          
+
           <ViewToggle
             viewMode={viewMode}
             onViewModeChange={setViewMode}
@@ -304,7 +304,7 @@ export default function DocumentsPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-card p-6 rounded-lg shadow-lg max-w-md mx-4"
+            className="bg-card bg-white p-6 rounded-lg shadow-lg max-w-md mx-4"
           >
             <h3 className="text-lg font-semibold text-foreground mb-3">
               문서 삭제
@@ -342,7 +342,7 @@ export default function DocumentsPage() {
               선택된 문서 삭제
             </h3>
             <p className="text-muted-foreground mb-6">
-              선택된 {selectedDocuments.length}개의 문서를 삭제하시겠습니까? 
+              선택된 {selectedDocuments.length}개의 문서를 삭제하시겠습니까?
               삭제된 문서는 복구할 수 없습니다.
             </p>
             <div className="flex justify-end gap-3">
