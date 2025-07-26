@@ -1,6 +1,8 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
   PenTool,
@@ -15,7 +17,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { signOut } from 'next-auth/react';
+import { useUserStore } from '@/stores/userStore';
 
 const menuItems = [
   {
@@ -60,11 +62,16 @@ const templateCategories = [
 ];
 
 export default function DashboardSidebar() {
+  const pathname = usePathname();
+  const { profile, plan } = useUserStore();
+  
+  const isActive = (path: string) => pathname === path;
+  
   return (
     <div className="w-64 bg-card border-r border-border flex flex-col">
       {/* Logo & Header */}
       <div className="p-6 border-b border-border">
-        <div className="flex items-center gap-3">
+        <Link href="/editor" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
             <Sparkles className="w-6 h-6 text-white" />
           </div>
@@ -72,28 +79,33 @@ export default function DashboardSidebar() {
             <h1 className="text-lg font-bold text-foreground">프롬</h1>
             <p className="text-xs text-muted-foreground">AI 글쓰기 도우미</p>
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* Navigation Menu */}
       <div className="flex-1 p-4 space-y-2">
         {menuItems.map((item, index) => {
           const Icon = item.icon;
+          const active = isActive(item.href);
+          
           return (
-            <motion.button
-              key={item.label}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className={cn(
-                'w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors',
-                item.primary
-                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-              )}
-            >
-              <Icon className="w-5 h-5" />
-              <span className="font-medium">{item.label}</span>
-            </motion.button>
+            <Link key={item.label} href={item.href}>
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className={cn(
+                  'w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors cursor-pointer',
+                  active
+                    ? 'bg-primary text-primary-foreground'
+                    : item.primary && pathname === item.href
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                )}
+              >
+                <Icon className="w-5 h-5" />
+                <span className="font-medium">{item.label}</span>
+              </motion.div>
+            </Link>
           );
         })}
 
@@ -129,27 +141,48 @@ export default function DashboardSidebar() {
 
       {/* User Profile & Settings */}
       <div className="p-4 border-t border-border space-y-2">
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          className="w-full flex items-center gap-3 p-3 rounded-lg text-left text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-        >
-          <Settings className="w-5 h-5" />
-          <span className="font-medium">설정</span>
-        </motion.button>
+        <Link href="/settings">
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            className={cn(
+              'w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors cursor-pointer',
+              isActive('/settings')
+                ? 'bg-accent text-foreground'
+                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+            )}
+          >
+            <Settings className="w-5 h-5" />
+            <span className="font-medium">설정</span>
+          </motion.div>
+        </Link>
 
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          className="w-full flex items-center gap-3 p-3 rounded-lg text-left text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-          onClick={() => signOut({ callbackUrl: '/login' })}
-        >
-          <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-            <User className="w-4 h-4 text-white" />
-          </div>
-          <div className="flex-1">
-            <div className="font-medium text-foreground">김프롬</div>
-            <div className="text-xs text-muted-foreground">무료 플랜</div>
-          </div>
-        </motion.button>
+        <Link href="/profile">
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            className={cn(
+              'w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors cursor-pointer',
+              isActive('/profile')
+                ? 'bg-accent text-foreground'
+                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+            )}
+          >
+            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+              {profile.avatar ? (
+                <img
+                  src={profile.avatar}
+                  alt={profile.name}
+                  className="w-full h-full rounded-full object-cover"
+                />
+              ) : (
+                <User className="w-4 h-4 text-white" />
+              )}
+            </div>
+            <div className="flex-1">
+              <div className="font-medium text-foreground">{profile.name}</div>
+              <div className="text-xs text-muted-foreground">{plan.displayName}</div>
+            </div>
+          </motion.div>
+        </Link>
       </div>
     </div>
   );
