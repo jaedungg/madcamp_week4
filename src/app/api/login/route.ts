@@ -6,8 +6,6 @@ import bcrypt from "bcrypt";
 
 export async function POST(req: NextRequest) {
   const { email, password } = await req.json();
-  console.log("입력값:", email, password);
-
   try {
     const { rows } = await pool.query(
       `SELECT * FROM users WHERE email = $1`,

@@ -13,7 +13,7 @@ const handler = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        console.log("authorize called:", credentials);
+        console.log("authorize called");
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
