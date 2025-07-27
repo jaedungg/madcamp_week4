@@ -1,0 +1,47 @@
+{
+  "metadata": {
+    "exportedAt": "2025-07-27T16:16:11.072Z",
+    "format": "json",
+    "userId": "user123",
+    "totalDocuments": 3,
+    "includeMetadata": true
+  },
+  "documents": [
+    {
+      "id": "doc1",
+      "title": "업무 이메일 초안",
+      "content": "안녕하세요. 업무 관련 문의드립니다. 프로젝트 진행 상황에 대해 논의하고 싶습니다.",
+      "createdAt": "2024-01-15T09:00:00.000Z",
+      "updatedAt": "2024-01-15T10:30:00.000Z",
+      "type": "business-email",
+      "tags": [
+        "업무",
+        "이메일"
+      ]
+    },
+    {
+      "id": "doc2",
+      "title": "감사 인사말",
+      "content": "진심으로 감사드립니다. 도움을 주신 덕분에 좋은 결과를 얻을 수 있었습니다.",
+      "createdAt": "2024-01-16T14:20:00.000Z",
+      "updatedAt": "2024-01-16T14:25:00.000Z",
+      "type": "personal-letter",
+      "tags": [
+        "감사",
+        "인사말"
+      ]
+    },
+    {
+      "id": "doc3",
+      "title": "프로젝트 제안서",
+      "content": "새로운 프로젝트를 제안드립니다. 해당 프로젝트는 회사의 디지털 전환을 가속화할 것입니다.",
+      "createdAt": "2024-01-17T11:15:00.000Z",
+      "updatedAt": "2024-01-18T09:45:00.000Z",
+      "type": "business-proposal",
+      "tags": [
+        "제안서",
+        "프로젝트"
+      ]
+    }
+  ]
+}
