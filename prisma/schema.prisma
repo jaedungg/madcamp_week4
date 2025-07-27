@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model document_access_logs {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  document_id String    @db.Uuid
+  user_id     String    @db.Uuid
+  accessed_at DateTime? @default(now()) @db.Timestamptz(6)
+  time_spent  Int?      @default(0)
+  documents   documents @relation(fields: [document_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users       users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([accessed_at], map: "idx_access_logs_accessed_at")
+  @@index([document_id], map: "idx_access_logs_document_id")
+  @@index([user_id], map: "idx_access_logs_user_id")
+}
+
+model document_shares {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  document_id   String    @db.Uuid
+  owner_id      String    @db.Uuid
+  share_id      String    @unique @db.VarChar(255)
+  share_type    String?   @default("private") @db.VarChar(20)
+  permissions   String?   @default("read") @db.VarChar(20)
+  password_hash String?   @db.VarChar(255)
+  expires_at    DateTime? @db.Timestamptz(6)
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+  is_active     Boolean?  @default(true)
+  documents     documents @relation(fields: [document_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users         users     @relation(fields: [owner_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([document_id], map: "idx_document_shares_document_id")
+  @@index([owner_id], map: "idx_document_shares_owner_id")
+  @@index([share_id], map: "idx_document_shares_share_id")
+}
+
+model documents {
+  id                   String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id              String                   @db.Uuid
+  title                String                   @db.VarChar(255)
+  content              String?
+  excerpt              String?
+  word_count           Int?                     @default(0)
+  category             String                   @db.VarChar(50)
+  tags                 String[]
+  status               String?                  @default("draft") @db.VarChar(20)
+  is_favorite          Boolean?                 @default(false)
+  ai_requests_used     Int?                     @default(0)
+  created_at           DateTime?                @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime?                @default(now()) @db.Timestamptz(6)
+  last_modified_at     DateTime?                @default(now()) @db.Timestamptz(6)
+  search_vector        Unsupported("tsvector")?
+  document_access_logs document_access_logs[]
+  document_shares      document_shares[]
+  users                users                    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([category], map: "idx_documents_category")
+  @@index([created_at], map: "idx_documents_created_at")
+  @@index([search_vector], map: "idx_documents_search", type: Gin)
+  @@index([status], map: "idx_documents_status")
+  @@index([updated_at], map: "idx_documents_updated_at")
+  @@index([user_id], map: "idx_documents_user_id")
+}
+
+model users {
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                String                 @unique
+  password             String
+  name                 String
+  profile_image        String?
+  created_at           DateTime?              @default(now()) @db.Timestamp(6)
+  document_access_logs document_access_logs[]
+  document_shares      document_shares[]
+  documents            documents[]
+}

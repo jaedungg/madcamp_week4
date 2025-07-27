@@ -2,6 +2,7 @@
 
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:3000";
 
 const handler = NextAuth({
   providers: [
@@ -18,7 +19,7 @@ const handler = NextAuth({
         }
 
         try {
-          const res = await fetch("http://localhost:3000/api/login", {
+          const res = await fetch(`${API_BASE_URL}/api/login`, {
             method: "POST",
             body: JSON.stringify({
               email: credentials.email,
