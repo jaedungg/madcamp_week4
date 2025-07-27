@@ -180,6 +180,38 @@
           "404": { "description": "Document not found" }
         }
       }
+    },
+    "/api/documents/{id}/duplicate": {
+      "post": {
+        "summary": "Duplicate a document",
+        "tags": ["Docomunts management"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Document duplicated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Document"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing required fields"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
     }
   },
   "components": {
