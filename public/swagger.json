@@ -260,6 +260,56 @@
           }
         }
       }
+    },
+    "/api/documents/{id}/access": {
+      "post": {
+        "summary": "Create a document access log",
+        "tags": ["Recent Documents"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "time_spent": {
+                    "type": "integer",
+                    "nullable": true
+                  }
+                },
+                "required": ["user_id"]
+              },
+              "example": {
+                "user_id": "a888fe3f-8a7e-4069-98e2-173c8c74c645",
+                "time_spent": 120
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Document access log created"
+          },
+          "404": {
+            "description": "Document not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
     }
   },
   "components": {
