@@ -11,12 +11,16 @@ import {
   X
 } from 'lucide-react';
 import { useUserStore, UserProfile } from '@/stores/userStore';
+import { useSession } from 'next-auth/react';
 
 interface ProfileHeaderProps {
   className?: string;
 }
 
 export default function ProfileHeader({ className }: ProfileHeaderProps) {
+  const session = useSession();
+  const userData = session.data?.user;
+  
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState('');
   const [editedEmail, setEditedEmail] = useState('');
@@ -42,8 +46,8 @@ export default function ProfileHeader({ className }: ProfileHeaderProps) {
   }
 
   const handleEditStart = () => {
-    setEditedName(profile.name || '');
-    setEditedEmail(profile.email || '');
+    setEditedName(userData?.name || '');
+    setEditedEmail(userData?.email || '');
     setIsEditing(true);
   };
 
@@ -63,8 +67,8 @@ export default function ProfileHeader({ className }: ProfileHeaderProps) {
   };
 
   const handleEditCancel = () => {
-    setEditedName(profile.name || '');
-    setEditedEmail(profile.email || '');
+    setEditedName(userData?.name || '');
+    setEditedEmail(userData?.email || '');
     setIsEditing(false);
   };
 
@@ -130,7 +134,7 @@ export default function ProfileHeader({ className }: ProfileHeaderProps) {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-white text-xl font-semibold">
-                  {getInitials(profile.name || '')}
+                  {getInitials(userData?.name || '')}
                 </div>
               )}
               
@@ -221,7 +225,7 @@ export default function ProfileHeader({ className }: ProfileHeaderProps) {
               {/* Name and Edit Button */}
               <div className="flex items-center gap-3">
                 <h2 className="text-2xl font-bold text-foreground">
-                  {profile.name || '사용자'}
+                  {userData?.name || '사용자'}
                 </h2>
                 <motion.button
                   whileHover={{ scale: 1.1 }}
@@ -237,21 +241,23 @@ export default function ProfileHeader({ className }: ProfileHeaderProps) {
               {/* Email */}
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Mail className="w-4 h-4" />
-                <span className="text-sm">{profile.email || '이메일 없음'}</span>
+                <span className="text-sm">{userData?.email || '이메일 없음'}</span>
               </div>
 
               {/* Join Date */}
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Calendar className="w-4 h-4" />
                 <span className="text-sm">
-                  {formatDate(profile.joinedAt)} 가입
+                  {userData?.created_at
+                    ? `${formatDate(new Date(userData.created_at))} 가입`
+                    : '가입일 정보 없음'}
                 </span>
               </div>
 
               {/* Last Login */}
-              <div className="text-xs text-muted-foreground">
+              {/* <div className="text-xs text-muted-foreground">
                 마지막 접속: {formatDate(profile.lastLoginAt)}
-              </div>
+              </div> */}
             </div>
           )}
         </div>

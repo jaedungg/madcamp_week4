@@ -64,7 +64,7 @@ const templateCategories = [
 
 export default function DashboardSidebar() {
   const session = useSession();
-  const userData = session.data;
+  const userData = session.data?.user;
   console.log("userData:", userData);
 
   const pathname = usePathname();
@@ -183,7 +183,7 @@ export default function DashboardSidebar() {
               )}
             </div>
             <div className="flex-1">
-              <div className="font-medium text-foreground">{profile.name}</div>
+              <div className="font-medium text-foreground">{userData?.name}</div>
               <div className="text-xs text-muted-foreground">{plan.displayName}</div>
             </div>
           </motion.div>

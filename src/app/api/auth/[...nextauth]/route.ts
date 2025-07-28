@@ -51,7 +51,7 @@ const handler = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        console.log("------------------ user data:", user);
+        // console.log("------------------ user data:", user);
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
@@ -65,7 +65,7 @@ const handler = NextAuth({
         session.user.email = token.email as string;
         session.user.name = token.name as string;
         session.user.created_at = token.created_at as string;
-        console.log("------------------ session data:", session.user);
+        // console.log("------------------ session data:", session.user);
       }
       return session;
     },
