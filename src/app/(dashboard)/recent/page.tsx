@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Plus, Calendar, TrendingUp } from 'lucide-react';
 import { useDocumentStore } from '@/stores/documentStore';
@@ -26,29 +26,34 @@ export default function RecentDocumentsPage() {
 
   const [timeFilter, setTimeFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
 
   const recentDocuments = getRecentDocuments(50); // Get more recent documents
 
   // Filter recent documents by time
-  const filteredRecentDocuments = recentDocuments.filter(doc => {
-    if (timeFilter === 'all') return true;
+  const filteredRecentDocuments = useMemo(() => {
+    if (!isClient) return recentDocuments;
+    
+    return recentDocuments.filter(doc => {
+      if (timeFilter === 'all') return true;
 
-    const now = new Date();
-    const docDate = doc.lastAccessedAt;
+      const now = new Date();
+      const docDate = doc.lastAccessedAt;
 
-    switch (timeFilter) {
-      case 'today':
-        return docDate.toDateString() === now.toDateString();
-      case 'week':
-        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        return docDate >= weekAgo;
-      case 'month':
-        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        return docDate >= monthAgo;
-      default:
-        return true;
-    }
-  });
+      switch (timeFilter) {
+        case 'today':
+          return docDate.toDateString() === now.toDateString();
+        case 'week':
+          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          return docDate >= weekAgo;
+        case 'month':
+          const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          return docDate >= monthAgo;
+        default:
+          return true;
+      }
+    });
+  }, [recentDocuments, timeFilter, isClient]);
 
   const handleCreateDocument = () => {
     const newDoc = createDocument();
@@ -84,6 +89,8 @@ export default function RecentDocumentsPage() {
   };
 
   const formatRelativeTime = (date: Date) => {
+    if (!isClient) return '로딩 중...';
+    
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / (1000 * 60));
@@ -101,7 +108,17 @@ export default function RecentDocumentsPage() {
     }).format(date);
   };
 
-  const getActivityStats = () => {
+  // 클라이언트에서만 실행되도록 설정
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // useMemo를 사용하여 활동 통계 계산 (hydration 오류 방지)
+  const { today, thisWeek, totalTimeSpent } = useMemo(() => {
+    if (!isClient) {
+      return { today: 0, thisWeek: 0, totalTimeSpent: 0 };
+    }
+
     const now = new Date();
     const today = recentDocuments.filter(doc =>
       doc.lastAccessedAt.toDateString() === now.toDateString()
@@ -115,9 +132,7 @@ export default function RecentDocumentsPage() {
     const totalTimeSpent = recentDocuments.reduce((sum, doc) => sum + doc.timeSpent, 0);
 
     return { today, thisWeek, totalTimeSpent };
-  };
-
-  const { today, thisWeek, totalTimeSpent } = getActivityStats();
+  }, [recentDocuments, isClient]);
 
   return (
     <div className="flex flex-col h-full">
@@ -227,7 +242,7 @@ export default function RecentDocumentsPage() {
             </div>
 
             <div className="text-sm text-muted-foreground">
-              {filteredRecentDocuments.length}개 문서
+              {isClient ? `${filteredRecentDocuments.length}개 문서` : '로딩 중...'}
             </div>
           </div>
 
@@ -240,7 +255,13 @@ export default function RecentDocumentsPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-auto">
-        {filteredRecentDocuments.length === 0 ? (
+        {!isClient ? (
+          // 서버에서는 로딩 상태 표시
+          <div className="flex flex-col items-center justify-center py-16 px-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">로딩 중...</p>
+          </div>
+        ) : filteredRecentDocuments.length === 0 ? (
           <EmptyState
             type="recent"
             onAction={handleCreateDocument}

@@ -39,15 +39,29 @@ export default function DocumentCard({
   const [formattedDate, setFormattedDate] = React.useState('');
 
   React.useEffect(() => {
-    setFormattedDate(
-      new Intl.DateTimeFormat('ko-KR', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      }).format(new Date(document.updatedAt))
-    );
+    try {
+      if (document.updatedAt) {
+        const date = new Date(document.updatedAt);
+        if (!isNaN(date.getTime())) {
+          setFormattedDate(
+            new Intl.DateTimeFormat('ko-KR', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            }).format(date)
+          );
+        } else {
+          setFormattedDate('날짜 없음');
+        }
+      } else {
+        setFormattedDate('날짜 없음');
+      }
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      setFormattedDate('날짜 없음');
+    }
   }, [document.updatedAt]);
 
   const handleCardClick = () => {
@@ -158,7 +172,7 @@ export default function DocumentCard({
                 </div>
                 <div className="flex items-center gap-1">
                   <Type className="w-3 h-3" />
-                  {document.wordCount.toLocaleString()}자
+                  {(document.wordCount || 0).toLocaleString()}자
                 </div>
                 {document.tags.length > 0 && (
                   <div className="flex items-center gap-1">
@@ -385,7 +399,7 @@ export default function DocumentCard({
           </div>
           <div className="flex items-center gap-1">
             <Type className="w-3 h-3" />
-            {document.wordCount.toLocaleString()}자
+            {(document.wordCount || 0).toLocaleString()}자
           </div>
         </div>
 
