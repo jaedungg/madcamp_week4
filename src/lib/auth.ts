@@ -1,9 +1,9 @@
-import NextAuth from "next-auth";
+import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
 const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:3000";
 
-export const authOptions = {
+export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -12,22 +12,30 @@ export const authOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        console.log("authorize called");
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
 
         try {
           const res = await fetch(`${API_BASE_URL}/api/login`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               email: credentials.email,
               password: credentials.password,
             }),
+            headers: { "Content-Type": "application/json" },
           });
 
           const user = await res.json();
-          return res.ok ? user : null;
-        } catch (err) {
-          console.error("Authorize error:", err);
+          
+          if (res.ok && user) {
+            return user;
+          }
+          
+          return null;
+        } catch (error) {
+          console.error("Auth error:", error);
           return null;
         }
       },
@@ -43,21 +51,14 @@ export const authOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.email = user.email;
       }
       return token;
     },
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string;
-        session.user.email = token.email as string;
       }
       return session;
     },
   },
 };
-
-// 여기에 올바르게 적용
-const handler = NextAuth(authOptions);
-
-export { handler as GET, handler as POST };

@@ -2,20 +2,36 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Clock, Plus, Calendar, TrendingUp } from 'lucide-react';
+import { Clock, Plus, Calendar, TrendingUp, AlertCircle, Loader2 } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { useDocumentStore } from '@/stores/documentStore';
 import { useUserStore } from '@/stores/userStore';
-import { Document } from '@/types/document';
+import { RecentDocument, Document } from '@/types/document';
 import DocumentCard from '@/components/documents/DocumentCard';
 import ViewToggle from '@/components/documents/ViewToggle';
 import EmptyState from '@/components/documents/EmptyState';
 import { cn } from '@/lib/utils';
+import {
+  fetchRecentDocumentsWithRetry,
+  logDocumentAccess,
+  getErrorMessage,
+  isApiError
+} from '@/lib/api/documents';
+
+interface ErrorState {
+  hasError: boolean;
+  message: string;
+  canRetry: boolean;
+}
 
 export default function RecentDocumentsPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
   const {
     viewMode,
     setViewMode,
-    getRecentDocuments,
     createDocument,
     duplicateDocument,
     deleteDocument,
@@ -24,17 +40,83 @@ export default function RecentDocumentsPage() {
 
   const { incrementDocumentCount } = useUserStore();
 
+  // 상태 관리
+  const [recentDocuments, setRecentDocuments] = useState<RecentDocument[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<ErrorState>({
+    hasError: false,
+    message: '',
+    canRetry: false
+  });
   const [timeFilter, setTimeFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
 
-  const recentDocuments = getRecentDocuments(50); // Get more recent documents
+  // 인증 상태 확인
+  useEffect(() => {
+    setIsClient(true);
 
-  // Filter recent documents by time
+    if (status === 'loading') return;
+
+    if (status === 'unauthenticated') {
+      router.push('/login');
+      return;
+    }
+  }, [status, router]);
+
+  // 최근 문서 데이터 가져오기
+  const loadRecentDocuments = async () => {
+    if (!session?.user?.id) return;
+
+    setIsLoading(true);
+    setError({ hasError: false, message: '', canRetry: false });
+
+    try {
+      const documents = await fetchRecentDocumentsWithRetry(session.user.id, 50);
+      setRecentDocuments(documents);
+    } catch (err) {
+      console.error('Failed to load recent documents:', err);
+
+      const errorMessage = getErrorMessage(err);
+      const canRetry = !isApiError(err) || (isApiError(err) && err.status >= 500);
+
+      setError({
+        hasError: true,
+        message: errorMessage,
+        canRetry
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 최초 데이터 로드
+  useEffect(() => {
+    if (session?.user?.id && isClient) {
+      loadRecentDocuments();
+    }
+  }, [session?.user?.id, isClient]);
+
+  // 시간 필터링된 문서들 (중복 제거 포함)
   const filteredRecentDocuments = useMemo(() => {
     if (!isClient) return recentDocuments;
-    
-    return recentDocuments.filter(doc => {
+
+    // 1. 먼저 ID로 중복 제거
+    const uniqueDocuments = recentDocuments.reduce((acc, current) => {
+      const existingIndex = acc.findIndex(doc => doc.id === current.id);
+      if (existingIndex === -1) {
+        acc.push(current);
+      } else {
+        // 같은 ID가 있다면 더 최근에 접근한 것을 사용
+        if (current.lastAccessedAt > acc[existingIndex].lastAccessedAt) {
+          acc[existingIndex] = current;
+        }
+      }
+      return acc;
+    }, [] as RecentDocument[]);
+
+    // 2. 시간 필터 적용
+    return uniqueDocuments.filter(doc => {
       if (timeFilter === 'all') return true;
 
       const now = new Date();
@@ -55,65 +137,7 @@ export default function RecentDocumentsPage() {
     });
   }, [recentDocuments, timeFilter, isClient]);
 
-  const handleCreateDocument = () => {
-    const newDoc = createDocument();
-    incrementDocumentCount();
-    // Navigate to editor
-    window.location.href = `/editor?id=${newDoc.id}`;
-  };
-
-  const handleEditDocument = (document: Document) => {
-    markAsRecent(document.id);
-    window.location.href = `/editor?id=${document.id}`;
-  };
-
-  const handleDuplicateDocument = (document: Document) => {
-    try {
-      const duplicatedDoc = duplicateDocument(document.id);
-      incrementDocumentCount();
-      console.log('문서가 복사되었습니다:', duplicatedDoc.title);
-    } catch (error) {
-      console.error('문서 복사 실패:', error);
-    }
-  };
-
-  const handleDeleteDocument = (document: Document) => {
-    setShowDeleteConfirm(document.id);
-  };
-
-  const confirmDelete = () => {
-    if (showDeleteConfirm) {
-      deleteDocument(showDeleteConfirm);
-      setShowDeleteConfirm(null);
-    }
-  };
-
-  const formatRelativeTime = (date: Date) => {
-    if (!isClient) return '로딩 중...';
-    
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / (1000 * 60));
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-    if (minutes < 1) return '방금 전';
-    if (minutes < 60) return `${minutes}분 전`;
-    if (hours < 24) return `${hours}시간 전`;
-    if (days < 7) return `${days}일 전`;
-
-    return new Intl.DateTimeFormat('ko-KR', {
-      month: 'short',
-      day: 'numeric'
-    }).format(date);
-  };
-
-  // 클라이언트에서만 실행되도록 설정
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  // useMemo를 사용하여 활동 통계 계산 (hydration 오류 방지)
+  // 활동 통계 계산
   const { today, thisWeek, totalTimeSpent } = useMemo(() => {
     if (!isClient) {
       return { today: 0, thisWeek: 0, totalTimeSpent: 0 };
@@ -133,6 +157,139 @@ export default function RecentDocumentsPage() {
 
     return { today, thisWeek, totalTimeSpent };
   }, [recentDocuments, isClient]);
+
+  // 이벤트 핸들러들
+  const handleCreateDocument = async () => {
+    if (!session?.user?.id) {
+      router.push('/login');
+      return;
+    }
+
+    try {
+      // 실제 데이터베이스에 문서 생성
+      const response = await fetch('/api/documents', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: '제목 없는 문서',
+          content: '',
+          category: 'draft',
+          tags: [],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('문서 생성에 실패했습니다.');
+      }
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || '문서 생성에 실패했습니다.');
+      }
+
+      // 로컬 store도 업데이트 (선택사항)
+      const newDoc = createDocument();
+      incrementDocumentCount();
+
+      // 실제 데이터베이스의 UUID를 사용해서 에디터로 이동
+      router.push(`/editor?id=${data.document.id}`);
+    } catch (error) {
+      console.error('문서 생성 실패:', error);
+      alert(error instanceof Error ? error.message : '문서 생성 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleEditDocument = async (document: Document) => {
+    // 로컬 스토어 업데이트
+    markAsRecent(document.id);
+
+    // 데이터베이스에 접근 로그 기록
+    if (session?.user?.id) {
+      try {
+        await logDocumentAccess(document.id, session.user.id);
+      } catch (error) {
+        console.warn('Failed to log document access:', error);
+        // 로그 실패는 사용자 경험을 방해하지 않음
+      }
+    }
+
+    router.push(`/editor?id=${document.id}`);
+  };
+
+  const handleDuplicateDocument = (document: Document) => {
+    try {
+      const duplicatedDoc = duplicateDocument(document.id);
+      incrementDocumentCount();
+      console.log('문서가 복사되었습니다:', duplicatedDoc.title);
+    } catch (error) {
+      console.error('문서 복사 실패:', error);
+    }
+  };
+
+  const handleDeleteDocument = (document: Document) => {
+    setShowDeleteConfirm(document.id);
+  };
+
+  const confirmDelete = () => {
+    if (showDeleteConfirm) {
+      deleteDocument(showDeleteConfirm);
+      // 로컬 상태에서도 제거
+      setRecentDocuments(prev => prev.filter(doc => doc.id !== showDeleteConfirm));
+      setShowDeleteConfirm(null);
+    }
+  };
+
+  const formatRelativeTime = (date: Date) => {
+    if (!isClient) return '로딩 중...';
+
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    if (minutes < 1) return '방금 전';
+    if (minutes < 60) return `${minutes}분 전`;
+    if (hours < 24) return `${hours}시간 전`;
+    if (days < 7) return `${days}일 전`;
+
+    return new Intl.DateTimeFormat('ko-KR', {
+      month: 'short',
+      day: 'numeric'
+    }).format(date);
+  };
+
+  // 문서가 수정된 것인지 단순 접근인지 판단
+  const getDocumentActivityInfo = (document: RecentDocument) => {
+    // timeSpent가 0이고 lastAccessedAt이 lastModifiedAt과 비슷하면 수정으로 간주
+    const timeDiff = Math.abs(document.lastAccessedAt.getTime() - document.lastModifiedAt.getTime());
+    const isModification = document.timeSpent === 0 && timeDiff < 60000; // 1분 이내 차이
+
+    return {
+      isModification,
+      activityType: isModification ? '수정' : '열람',
+      displayTime: isModification ? document.lastModifiedAt : document.lastAccessedAt,
+      icon: isModification ? '' : ''
+    };
+  };
+
+  // 로딩 상태
+  if (status === 'loading' || !isClient) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full py-16">
+        <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
+        <p className="text-muted-foreground">로딩 중...</p>
+      </div>
+    );
+  }
+
+  // 인증되지 않은 상태
+  if (status === 'unauthenticated') {
+    return null; // 리다이렉트 처리중
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -255,11 +412,30 @@ export default function RecentDocumentsPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-auto">
-        {!isClient ? (
-          // 서버에서는 로딩 상태 표시
+        {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16 px-8 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">로딩 중...</p>
+            <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground">최근 문서를 불러오는 중...</p>
+          </div>
+        ) : error.hasError ? (
+          <div className="flex flex-col items-center justify-center py-16 px-8 text-center">
+            <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">
+              문서를 불러올 수 없습니다
+            </h3>
+            <p className="text-muted-foreground mb-6 max-w-md">
+              {error.message}
+            </p>
+            {error.canRetry && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={loadRecentDocuments}
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors"
+              >
+                다시 시도
+              </motion.button>
+            )}
           </div>
         ) : filteredRecentDocuments.length === 0 ? (
           <EmptyState
@@ -289,15 +465,28 @@ export default function RecentDocumentsPage() {
                         onDelete={handleDeleteDocument}
                       />
                       <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {formatRelativeTime(document.lastAccessedAt)}에 수정
-                        </span>
-                        {document.timeSpent > 0 && (
-                          <span>
-                            작업시간: {Math.round(document.timeSpent)}분
-                          </span>
-                        )}
+                        {(() => {
+                          const activityInfo = getDocumentActivityInfo(document);
+                          return (
+                            <>
+                              <span className="flex items-center gap-1">
+                                <span className="text-sm">{activityInfo.icon}</span>
+                                <Clock className="w-3 h-3" />
+                                {formatRelativeTime(activityInfo.displayTime)}에 {activityInfo.activityType}
+                              </span>
+                              {document.timeSpent > 0 && (
+                                <span>
+                                  작업시간: {Math.round(document.timeSpent)}분
+                                </span>
+                              )}
+                              {activityInfo.isModification && (
+                                <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                                  최근 수정됨
+                                </span>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
                   </motion.div>
@@ -321,11 +510,20 @@ export default function RecentDocumentsPage() {
                       onDuplicate={handleDuplicateDocument}
                       onDelete={handleDeleteDocument}
                     />
-                    {/* Recent badge */}
-                    <div className="absolute top-2 right-2 bg-primary/90 text-primary-foreground text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {formatRelativeTime(document.lastAccessedAt)}
-                    </div>
+                    {/* Recent badge with modification indicator */}
+                    {(() => {
+                      const activityInfo = getDocumentActivityInfo(document);
+                      return (
+                        <div className={`absolute top-2 right-2 text-xs px-2 py-1 rounded-full flex items-center gap-1 ${activityInfo.isModification
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-primary/90 text-primary-foreground'
+                          }`}>
+                          <span className="text-xs">{activityInfo.icon}</span>
+                          <Clock className="w-3 h-3" />
+                          {formatRelativeTime(activityInfo.displayTime)}
+                        </div>
+                      );
+                    })()}
                   </motion.div>
                 ))}
               </div>

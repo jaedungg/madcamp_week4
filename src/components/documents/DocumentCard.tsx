@@ -14,8 +14,8 @@ import {
   Tag
 } from 'lucide-react';
 import { Document, DOCUMENT_CATEGORY_LABELS, DOCUMENT_STATUS_LABELS } from '@/types/document';
-import { useDocumentStore } from '@/stores/documentStore';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 interface DocumentCardProps {
   document: Document;
@@ -23,6 +23,7 @@ interface DocumentCardProps {
   onEdit?: (document: Document) => void;
   onDuplicate?: (document: Document) => void;
   onDelete?: (document: Document) => void;
+  onToggleFavorite?: (documentId: string) => void;
   className?: string;
 }
 
@@ -32,9 +33,10 @@ export default function DocumentCard({
   onEdit,
   onDuplicate,
   onDelete,
+  onToggleFavorite,
   className
 }: DocumentCardProps) {
-  const { toggleFavorite, markAsRecent } = useDocumentStore();
+  const router = useRouter();
   const [showActions, setShowActions] = React.useState(false);
   const [formattedDate, setFormattedDate] = React.useState('');
 
@@ -65,15 +67,14 @@ export default function DocumentCard({
   }, [document.updatedAt]);
 
   const handleCardClick = () => {
-    markAsRecent(document.id);
-    // Navigate to editor with document ID
-    window.location.href = `/editor?id=${document.id}`;
+    // Navigate to editor with document ID using router
+    router.push(`/editor?id=${document.id}`);
   };
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    toggleFavorite(document.id);
+    onToggleFavorite?.(document.id);
   };
 
   const handleActionsClick = (e: React.MouseEvent) => {
@@ -174,7 +175,7 @@ export default function DocumentCard({
                   <Type className="w-3 h-3" />
                   {(document.wordCount || 0).toLocaleString()}자
                 </div>
-                {document.tags.length > 0 && (
+                {document.tags && document.tags.length > 0 && (
                   <div className="flex items-center gap-1">
                     <Tag className="w-3 h-3" />
                     {document.tags.slice(0, 2).join(', ')}
@@ -372,7 +373,7 @@ export default function DocumentCard({
       </p>
 
       {/* Tags */}
-      {document.tags.length > 0 && (
+      {document.tags && document.tags.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-4">
           {document.tags.slice(0, 3).map((tag) => (
             <span
