@@ -23,7 +23,7 @@ import { useTemplateStore } from '@/stores/templateStore';
 import { useDocumentStore } from '@/stores/documentStore';
 import { useUserStore } from '@/stores/userStore';
 import { Template, TemplateCategory, TEMPLATE_CATEGORY_LABELS, TemplateFilters } from '@/types/template';
-import { DocumentCategory, DocumentFilters } from '@/types/document';
+import { DocumentFilters } from '@/types/document';
 import TemplateCard from '@/components/documents/TemplateCard';
 import SearchAndFilters from '@/components/documents/SearchAndFilters';
 import EmptyState from '@/components/documents/EmptyState';
@@ -54,11 +54,8 @@ export default function TemplatesPage() {
     duplicateTemplate,
     deleteTemplate,
     exportTemplates,
-    importTemplates,
-    useTemplate
+    importTemplates
   } = useTemplateStore();
-
-  const { createDocument } = useDocumentStore();
   const { incrementDocumentCount } = useUserStore();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -70,28 +67,46 @@ export default function TemplatesPage() {
   const stats = getStats();
 
   const handleUseTemplate = (template: Template) => {
-    // Track template usage
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useTemplate(template.id);
+    try {
+      // Get template store and document store instances
+      const templateStore = useTemplateStore.getState();
+      const documentStore = useDocumentStore.getState();
+      
+      // Track template usage (avoiding ESLint hook warning by using store reference)
+      templateStore.useTemplate(template.id);
 
-    // Get document store instance
-    const documentStore = useDocumentStore.getState();
-    
-    // Duplicate the template document to create a new document
-    const duplicatedDoc = documentStore.duplicateDocument(template.id);
-    incrementDocumentCount();
+      // Duplicate the template document to create a new document
+      const duplicatedDoc = documentStore.duplicateDocument(template.id);
+      if (!duplicatedDoc) {
+        throw new Error('템플릿 복제에 실패했습니다.');
+      }
 
-    // Mark the new document as a regular document (not a template)
-    documentStore.convertFromTemplate(duplicatedDoc.id);
+      // Increment user document count
+      incrementDocumentCount();
 
-    // Update the title to remove template-specific naming
-    documentStore.updateDocument(duplicatedDoc.id, {
-      title: template.title.replace(' 템플릿', '').replace('(복사본)', '').trim() || '새 문서',
-      status: 'draft'
-    });
+      // Mark the new document as a regular document (not a template)
+      documentStore.convertFromTemplate(duplicatedDoc.id);
 
-    // Navigate to editor with the new document
-    window.location.href = `/editor?id=${duplicatedDoc.id}`;
+      // Clean up the title and set as draft
+      const cleanTitle = template.title
+        .replace(/\s*템플릿\s*$/i, '')
+        .replace(/\s*\(복사본\)\s*$/i, '')
+        .trim() || '새 문서';
+
+      documentStore.updateDocument(duplicatedDoc.id, {
+        title: cleanTitle,
+        status: 'draft',
+        lastModifiedAt: new Date()
+      });
+
+      // Navigate to editor with the new document
+      if (typeof window !== 'undefined') {
+        window.location.href = `/editor?id=${duplicatedDoc.id}`;
+      }
+    } catch (error) {
+      console.error('템플릿 사용 중 오류가 발생했습니다:', error);
+      // You might want to show a toast notification here in the future
+    }
   };
 
   const handleDuplicateTemplate = (template: Template) => {
