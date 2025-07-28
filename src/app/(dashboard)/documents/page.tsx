@@ -10,6 +10,7 @@ import ViewToggle from '@/components/documents/ViewToggle';
 import EmptyState from '@/components/documents/EmptyState';
 import { cn } from '@/lib/utils';
 import { Document } from '@/types/document';
+import { transformDocuments, transformDocument } from '@/lib/transform';
 
 interface DocumentsResponse {
   success: boolean;
@@ -82,7 +83,9 @@ export default function DocumentsPage() {
       const data: DocumentsResponse = await response.json();
       
       if (data.success) {
-        setDocuments(data.documents);
+        // API 응답을 camelCase로 변환
+        const transformedDocuments = transformDocuments(data.documents);
+        setDocuments(transformedDocuments);
         setTotalPages(data.pagination.totalPages);
         setTotalDocuments(data.pagination.total);
       } else {
@@ -114,16 +117,27 @@ export default function DocumentsPage() {
         throw new Error('문서 복제에 실패했습니다.');
       }
 
-      const duplicatedDoc = await response.json();
+      const data = await response.json();
+      const duplicatedDoc = transformDocument(data.document || data);
       
       // 목록 맨 앞에 추가
       setDocuments(prev => [duplicatedDoc, ...prev]);
       setTotalDocuments(prev => prev + 1);
       
-      console.log('문서가 복제되었습니다.');
+      // 성공 피드백 (콘솔 대신 사용자 친화적 알림)
+      const successMessage = window.document.createElement('div');
+      successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+      successMessage.textContent = '문서가 성공적으로 복제되었습니다.';
+      window.document.body.appendChild(successMessage);
+      setTimeout(() => window.document.body.removeChild(successMessage), 3000);
     } catch (error) {
       console.error('문서 복제 오류:', error);
-      alert(error instanceof Error ? error.message : '문서 복제 중 오류가 발생했습니다.');
+      // 사용자 친화적 오류 메시지
+      const errorMessage = window.document.createElement('div');
+      errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+      errorMessage.textContent = error instanceof Error ? error.message : '문서 복제 중 오류가 발생했습니다.';
+      window.document.body.appendChild(errorMessage);
+      setTimeout(() => window.document.body.removeChild(errorMessage), 5000);
     }
   };
 
@@ -134,13 +148,30 @@ export default function DocumentsPage() {
   const confirmDelete = async () => {
     if (!showDeleteConfirm) return;
 
+    // 세션 상태 확인
+    if (!session?.user?.email) {
+      console.error('세션이 없습니다.');
+      const errorMessage = window.document.createElement('div');
+      errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+      errorMessage.textContent = '로그인이 필요합니다.';
+      window.document.body.appendChild(errorMessage);
+      setTimeout(() => window.document.body.removeChild(errorMessage), 5000);
+      return;
+    }
+
     try {
+      console.log('삭제 요청:', { documentId: showDeleteConfirm, userEmail: session.user.email });
+      
       const response = await fetch(`/api/documents/${showDeleteConfirm}`, {
         method: 'DELETE',
       });
 
+      console.log('삭제 응답:', { status: response.status, ok: response.ok });
+
       if (!response.ok) {
-        throw new Error('문서 삭제에 실패했습니다.');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('삭제 오류 응답:', errorData);
+        throw new Error(errorData.error || `문서 삭제에 실패했습니다. (${response.status})`);
       }
 
       // 목록에서 제거
@@ -148,10 +179,19 @@ export default function DocumentsPage() {
       setTotalDocuments(prev => prev - 1);
       setShowDeleteConfirm(null);
       
-      console.log('문서가 삭제되었습니다.');
+      // 성공 피드백
+      const successMessage = window.document.createElement('div');
+      successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+      successMessage.textContent = '문서가 성공적으로 삭제되었습니다.';
+      window.document.body.appendChild(successMessage);
+      setTimeout(() => window.document.body.removeChild(successMessage), 3000);
     } catch (error) {
       console.error('문서 삭제 오류:', error);
-      alert(error instanceof Error ? error.message : '문서 삭제 중 오류가 발생했습니다.');
+      const errorMessage = window.document.createElement('div');
+      errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+      errorMessage.textContent = error instanceof Error ? error.message : '문서 삭제 중 오류가 발생했습니다.';
+      window.document.body.appendChild(errorMessage);
+      setTimeout(() => window.document.body.removeChild(errorMessage), 5000);
     }
   };
 
@@ -177,10 +217,19 @@ export default function DocumentsPage() {
       setSelectedDocuments([]);
       setShowBulkDeleteConfirm(false);
       
-      console.log('선택된 문서들이 삭제되었습니다.');
+      // 성공 피드백
+      const successMessage = window.document.createElement('div');
+      successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+      successMessage.textContent = `선택된 ${selectedDocuments.length}개 문서가 성공적으로 삭제되었습니다.`;
+      window.document.body.appendChild(successMessage);
+      setTimeout(() => window.document.body.removeChild(successMessage), 3000);
     } catch (error) {
       console.error('일괄 삭제 오류:', error);
-      alert(error instanceof Error ? error.message : '문서 삭제 중 오류가 발생했습니다.');
+      const errorMessage = window.document.createElement('div');
+      errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+      errorMessage.textContent = error instanceof Error ? error.message : '문서 삭제 중 오류가 발생했습니다.';
+      window.document.body.appendChild(errorMessage);
+      setTimeout(() => window.document.body.removeChild(errorMessage), 5000);
     }
   };
 
@@ -195,17 +244,22 @@ export default function DocumentsPage() {
         throw new Error('즐겨찾기 변경에 실패했습니다.');
       }
 
-      const updatedDoc = await response.json();
+      const data = await response.json();
+      const updatedDoc = transformDocument(data.document || data);
       
       // 목록에서 업데이트
       setDocuments(prev => prev.map(doc => 
         doc.id === documentId 
-          ? { ...doc, is_favorite: updatedDoc.is_favorite }
+          ? { ...doc, isFavorite: updatedDoc.isFavorite }
           : doc
       ));
     } catch (error) {
       console.error('즐겨찾기 토글 오류:', error);
-      alert(error instanceof Error ? error.message : '즐겨찾기 변경 중 오류가 발생했습니다.');
+      const errorMessage = window.document.createElement('div');
+      errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+      errorMessage.textContent = error instanceof Error ? error.message : '즐겨찾기 변경 중 오류가 발생했습니다.';
+      window.document.body.appendChild(errorMessage);
+      setTimeout(() => window.document.body.removeChild(errorMessage), 5000);
     }
   };
 
@@ -230,9 +284,19 @@ export default function DocumentsPage() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      // 성공 피드백
+      const successMessage = window.document.createElement('div');
+      successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+      successMessage.textContent = '문서가 성공적으로 내보내지기 되었습니다.';
+      window.document.body.appendChild(successMessage);
+      setTimeout(() => window.document.body.removeChild(successMessage), 3000);
     } catch (error) {
       console.error('문서 내보내기 실패:', error);
-      alert(error instanceof Error ? error.message : '문서 내보내기 중 오류가 발생했습니다.');
+      const errorMessage = window.document.createElement('div');
+      errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+      errorMessage.textContent = error instanceof Error ? error.message : '문서 내보내기 중 오류가 발생했습니다.';
+      window.document.body.appendChild(errorMessage);
+      setTimeout(() => window.document.body.removeChild(errorMessage), 5000);
     }
   };
 
@@ -260,13 +324,26 @@ export default function DocumentsPage() {
 
           // 목록 새로고침
           loadDocuments();
-          console.log('문서를 성공적으로 가져왔습니다.');
+          // 성공 피드백
+          const successMessage = document.createElement('div');
+          successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+          successMessage.textContent = '문서를 성공적으로 가져왔습니다.';
+          document.body.appendChild(successMessage);
+          setTimeout(() => document.body.removeChild(successMessage), 3000);
         } else {
-          alert('올바르지 않은 파일 형식입니다.');
+          const errorMessage = document.createElement('div');
+          errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+          errorMessage.textContent = '올바르지 않은 파일 형식입니다.';
+          document.body.appendChild(errorMessage);
+          setTimeout(() => document.body.removeChild(errorMessage), 5000);
         }
       } catch (error) {
         console.error('파일 읽기 실패:', error);
-        alert(error instanceof Error ? error.message : '파일 처리 중 오류가 발생했습니다.');
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+        errorMessage.textContent = error instanceof Error ? error.message : '파일 처리 중 오류가 발생했습니다.';
+        document.body.appendChild(errorMessage);
+        setTimeout(() => document.body.removeChild(errorMessage), 5000);
       }
     };
     reader.readAsText(file);
@@ -545,6 +622,7 @@ export default function DocumentsPage() {
                     onEdit={() => handleEditDocument(document)}
                     onDuplicate={() => handleDuplicateDocument(document)}
                     onDelete={() => handleDeleteDocument(document)}
+                    onToggleFavorite={() => handleToggleFavorite(document.id)}
                   />
                 </motion.div>
               ))}

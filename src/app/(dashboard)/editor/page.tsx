@@ -14,6 +14,7 @@ import {
   insertOrReplaceText
 } from '@/lib/ai/services';
 import { Editor } from '@tiptap/core';
+import { transformDocument } from '@/lib/transform';
 
 export default function EditorPage() {
   const { data: session } = useSession();
@@ -126,18 +127,26 @@ export default function EditorPage() {
     if (!session?.user?.email) return;
 
     try {
-      const response = await fetch(`/api/documents/${docId}?user_id=${encodeURIComponent(session.user.email)}`);
+      // URL 파라미터 제거 - API에서 세션 정보 사용
+      const response = await fetch(`/api/documents/${docId}`);
       
       if (!response.ok) {
         throw new Error('문서를 불러올 수 없습니다.');
       }
 
-      const document = await response.json();
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || '문서를 불러올 수 없습니다.');
+      }
+
+      // API 응답을 camelCase로 변환 
+      const document = transformDocument(data.document);
       
       setDocumentId(document.id);
       setDocumentTitle(document.title || '제목 없는 문서');
       setContent(document.content || '');
-      setLastSaved(new Date(document.updated_at || document.created_at));
+      setLastSaved(new Date(document.updatedAt || document.createdAt));
       
       console.log('문서 불러오기 완료:', document);
     } catch (error) {

@@ -2,34 +2,34 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/lib/auth'
 
 export async function POST(req: NextRequest) {
-  const raw = await req.text()
-  console.log('🔥 Raw body:', raw)
   try {
-    const body = JSON.parse(raw);
-    const { title, content, category, tags, user_id } = body
+    // 사용자 인증 확인
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-    if (!title || !category || !user_id) {
+    const raw = await req.text()
+    console.log('🔥 Raw body:', raw)
+    const body = JSON.parse(raw);
+    const { title, content, category, tags } = body
+
+    if (!title || !category) {
       return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 })
     }
 
-    // user_id가 이메일인지 UUID인지 확인하고 UUID로 변환
-    let actualUserId = user_id
-    const isEmail = user_id.includes('@')
+    // 세션에서 사용자 ID 가져오기 (보안상 클라이언트 데이터 무시)
+    const user = await prisma.users.findUnique({
+      where: { email: session.user.email },
+      select: { id: true }
+    })
     
-    if (isEmail) {
-      // 이메일인 경우 사용자를 찾아서 UUID를 가져옴
-      const user = await prisma.users.findUnique({
-        where: { email: user_id },
-        select: { id: true }
-      })
-      
-      if (user) {
-        actualUserId = user.id
-      } else {
-        return NextResponse.json({ error: 'User not found' }, { status: 404 })
-      }
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     const excerpt = content ? content.slice(0, 200) : ''
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
         content,
         category,
         tags,
-        user_id: actualUserId,
+        user_id: user.id, // 세션에서 가져온 실제 사용자 ID 사용
         excerpt,
         word_count: wordCount,
       },
@@ -56,6 +56,12 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
+    // 사용자 인증 확인
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { searchParams } = new URL(req.url)
 
     const page = parseInt(searchParams.get('page') || '1', 10)
@@ -66,30 +72,19 @@ export async function GET(req: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'created_at'
     const sortOrder = searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc'
     const favoritesOnly = searchParams.get('favoritesOnly') === 'true'
-    const userId = searchParams.get('user_id') // 필수 아님
 
-    const where: Prisma.documentsWhereInput = {}
+    // 세션에서 사용자 ID 가져오기 (보안상 URL 파라미터 무시)
+    const user = await prisma.users.findUnique({
+      where: { email: session.user.email },
+      select: { id: true }
+    })
+    
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
 
-    if (userId) {
-      // user_id가 이메일인지 UUID인지 확인
-      const isEmail = userId.includes('@')
-      
-      if (isEmail) {
-        // 이메일인 경우 사용자를 찾아서 UUID를 가져옴
-        const user = await prisma.users.findUnique({
-          where: { email: userId },
-          select: { id: true }
-        })
-        
-        if (user) {
-          where.user_id = user.id
-        } else {
-          return NextResponse.json({ error: 'User not found' }, { status: 404 })
-        }
-      } else {
-        // UUID인 경우 직접 사용
-        where.user_id = userId
-      }
+    const where: Prisma.documentsWhereInput = {
+      user_id: user.id // 항상 현재 사용자의 문서만 조회
     }
     if (category !== 'all') where.category = category
     if (status !== 'all') where.status = status
@@ -115,7 +110,7 @@ export async function GET(req: NextRequest) {
 
     const totalPages = Math.ceil(total / limit)
 
-    // 문서 통계 (예: 전체, 카테고리별 수 등)
+    // 문서 통계 (현재 사용자의 문서만)
     const stats = await prisma.documents.groupBy({
       by: ['category'],
       _count: { _all: true },
