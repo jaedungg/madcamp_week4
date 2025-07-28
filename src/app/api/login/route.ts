@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     const isValid = await bcrypt.compare(password, user.password);
     // if (!isValid) return NextResponse.json(null, { status: 401 }); // TODO: 회원가입 구현 이후에 활성화
 
-    return NextResponse.json({ id: user.id, email: user.email });
+    return NextResponse.json({ id: user.id, name: user.name, email: user.email, created_at: user.created_at, profile_image: user.profile_image });
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json(null, { status: 500 });

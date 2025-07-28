@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUserStore } from '@/stores/userStore';
+import { useSession } from 'next-auth/react';
 
 const menuItems = [
   {
@@ -62,6 +63,10 @@ const templateCategories = [
 ];
 
 export default function DashboardSidebar() {
+  const session = useSession();
+  const userData = session.data;
+  console.log("userData:", userData);
+
   const pathname = usePathname();
   const { profile, plan } = useUserStore();
   
