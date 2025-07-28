@@ -1,10 +1,9 @@
-//src/app/api/auth/[...nextauth]/route.ts
-
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+
 const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:3000";
 
-const handler = NextAuth({
+export const authOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -13,30 +12,22 @@ const handler = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        console.log("authorize called");
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
+        if (!credentials?.email || !credentials?.password) return null;
 
         try {
           const res = await fetch(`${API_BASE_URL}/api/login`, {
             method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               email: credentials.email,
               password: credentials.password,
             }),
-            headers: { "Content-Type": "application/json" },
           });
 
           const user = await res.json();
-          
-          if (res.ok && user) {
-            return user;
-          }
-          
-          return null;
-        } catch (error) {
-          console.error("Auth error:", error);
+          return res.ok ? user : null;
+        } catch (err) {
+          console.error("Authorize error:", err);
           return null;
         }
       },
@@ -51,11 +42,8 @@ const handler = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        // console.log("------------------ user data:", user);
         token.id = user.id;
         token.email = user.email;
-        token.name = user.name;
-        token.created_at = user.created_at;
       }
       return token;
     },
@@ -63,13 +51,13 @@ const handler = NextAuth({
       if (token && session.user) {
         session.user.id = token.id as string;
         session.user.email = token.email as string;
-        session.user.name = token.name as string;
-        session.user.created_at = token.created_at as string;
-        // console.log("------------------ session data:", session.user);
       }
       return session;
     },
   },
-});
+};
+
+// 여기에 올바르게 적용
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };

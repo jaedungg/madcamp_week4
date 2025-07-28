@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
 import pool from '@/lib/db';
 import { z } from 'zod';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../../auth/[...nextauth]/route';
 
 // 요청 유효성 검사 스키마
 const updateSchema = z.object({
@@ -11,6 +13,29 @@ const updateSchema = z.object({
   password: z.string().min(6).optional(),
   profile_image: z.string().optional(),
 });
+
+// src/app/api/user/[id]/route.ts
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const userId = params.id;
+
+  if (!userId) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+  }
+
+  const result = await pool.query(
+    `SELECT id, name, email, profile_image, created_at FROM users WHERE id = $1`,
+    [userId]
+  );
+
+  if (result.rows.length === 0) {
+    return new Response(JSON.stringify({ error: 'User not found' }), { status: 404 });
+  }
+
+  return new Response(JSON.stringify(result.rows[0]), { status: 200 });
+}
 
 export async function PUT(
   req: NextRequest,
@@ -67,6 +92,9 @@ export async function PUT(
       WHERE id = $${index}
       RETURNING id, name, email, profile_image
     `;
+
+    console.log("query: ", query)
+    console.log("values: ", values);
 
     const result = await pool.query(query, values);
 

@@ -6,7 +6,7 @@ export interface UserProfile {
   name: string;
   email: string;
   avatar?: string;
-  joinedAt: Date;
+  created_at: Date;
   lastLoginAt: Date;
 }
 
@@ -58,7 +58,7 @@ const defaultProfile: UserProfile = {
   id: 'user-1',
   name: '김프롬',
   email: 'user@from-ai.com',
-  joinedAt: new Date('2024-01-01'),
+  created_at: new Date('2024-01-01'),
   lastLoginAt: new Date(),
 };
 
@@ -201,7 +201,7 @@ export const useUserStore = create<UserState>()(
           name: state.profile.name,
           email: state.profile.email,
           avatar: state.profile.avatar,
-          joinedAt: state.profile.joinedAt,
+          created_at: state.profile.created_at,
           lastLoginAt: state.profile.lastLoginAt,
         },
         plan: state.plan,
@@ -218,9 +218,9 @@ export const useUserStore = create<UserState>()(
           if (typeof state.stats.lastActivity === 'string') {
             state.stats.lastActivity = new Date(state.stats.lastActivity);
           }
-          // joinedAt과 lastLoginAt도 Date 객체로 변환
-          if (typeof state.profile.joinedAt === 'string') {
-            state.profile.joinedAt = new Date(state.profile.joinedAt);
+          // created_at과 lastLoginAt도 Date 객체로 변환
+          if (typeof state.profile.created_at === 'string') {
+            state.profile.created_at = new Date(state.profile.created_at);
           }
           if (typeof state.profile.lastLoginAt === 'string') {
             state.profile.lastLoginAt = new Date(state.profile.lastLoginAt);
