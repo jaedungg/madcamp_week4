@@ -15,7 +15,9 @@ import {
   PenTool,
   Briefcase,
   Users,
-  GraduationCap
+  GraduationCap,
+  Search,
+  X
 } from 'lucide-react';
 import { useTemplateStore } from '@/stores/templateStore';
 import { useDocumentStore } from '@/stores/documentStore';
@@ -181,21 +183,21 @@ export default function TemplatesPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex-shrink-0 p-6 border-b border-border">
-        <div className="flex items-center justify-between mb-6">
+      <div className="flex-shrink-0 p-4 border-b border-border">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
-              <BookTemplate className="w-7 h-7 text-primary" />
+            <h1 className="text-lg sm:text-xl font-bold text-foreground flex items-center gap-2">
+              <BookTemplate className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
               템플릿
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               다양한 상황에 맞는 템플릿으로 글쓰기를 시작해보세요
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {/* Import/Export */}
-            <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-1.5">
               <input
                 type="file"
                 accept=".json"
@@ -207,9 +209,9 @@ export default function TemplatesPage() {
                 htmlFor="import-templates"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="flex items-center gap-2 px-3 py-2 text-sm bg-muted hover:bg-accent rounded-lg transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm bg-muted hover:bg-accent rounded-md transition-colors cursor-pointer"
               >
-                <Upload className="w-4 h-4" />
+                <Upload className="w-3.5 h-3.5" />
                 가져오기
               </motion.label>
 
@@ -217,9 +219,9 @@ export default function TemplatesPage() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={handleExportTemplates}
-                className="flex items-center gap-2 px-3 py-2 text-sm bg-muted hover:bg-accent rounded-lg transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm bg-muted hover:bg-accent rounded-md transition-colors"
               >
-                <Download className="w-4 h-4" />
+                <Download className="w-3.5 h-3.5" />
                 내보내기
               </motion.button>
             </div>
@@ -228,28 +230,29 @@ export default function TemplatesPage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors font-medium"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md transition-colors font-medium text-sm"
             >
-              <Plus className="w-4 h-4" />
-              새 템플릿
+              <Plus className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">새 템플릿</span>
+              <span className="sm:hidden">새로만들기</span>
             </motion.button>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        {/* Stats - Responsive Compact Version */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200"
+            className="bg-gradient-to-r from-purple-50 to-purple-100 p-2.5 sm:p-3 rounded-lg border border-purple-200"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
-                <BookTemplate className="w-5 h-5 text-white" />
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-purple-500 rounded-md flex items-center justify-center flex-shrink-0">
+                <BookTemplate className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
               </div>
-              <div>
-                <p className="text-sm text-purple-700">전체 템플릿</p>
-                <p className="text-xl font-bold text-purple-900">{stats.totalTemplates}개</p>
+              <div className="min-w-0">
+                <p className="text-xs text-purple-700 truncate">전체 템플릿</p>
+                <p className="text-base sm:text-lg font-bold text-purple-900">{stats.totalTemplates}개</p>
               </div>
             </div>
           </motion.div>
@@ -258,15 +261,15 @@ export default function TemplatesPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200"
+            className="bg-gradient-to-r from-blue-50 to-blue-100 p-2.5 sm:p-3 rounded-lg border border-blue-200"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
-                <Star className="w-5 h-5 text-white" />
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-500 rounded-md flex items-center justify-center flex-shrink-0">
+                <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
               </div>
-              <div>
-                <p className="text-sm text-blue-700">공식 템플릿</p>
-                <p className="text-xl font-bold text-blue-900">{stats.builtInCount}개</p>
+              <div className="min-w-0">
+                <p className="text-xs text-blue-700 truncate">공식 템플릿</p>
+                <p className="text-base sm:text-lg font-bold text-blue-900">{stats.builtInCount}개</p>
               </div>
             </div>
           </motion.div>
@@ -275,15 +278,15 @@ export default function TemplatesPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border border-green-200"
+            className="bg-gradient-to-r from-green-50 to-green-100 p-2.5 sm:p-3 rounded-lg border border-green-200"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-white" />
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-green-500 rounded-md flex items-center justify-center flex-shrink-0">
+                <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
               </div>
-              <div>
-                <p className="text-sm text-green-700">총 사용횟수</p>
-                <p className="text-xl font-bold text-green-900">{stats.totalUsage}회</p>
+              <div className="min-w-0">
+                <p className="text-xs text-green-700 truncate">총 사용횟수</p>
+                <p className="text-base sm:text-lg font-bold text-green-900">{stats.totalUsage}회</p>
               </div>
             </div>
           </motion.div>
@@ -292,39 +295,39 @@ export default function TemplatesPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-gradient-to-r from-red-50 to-red-100 p-4 rounded-lg border border-red-200"
+            className="bg-gradient-to-r from-red-50 to-red-100 p-2.5 sm:p-3 rounded-lg border border-red-200"
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-white" />
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-red-500 rounded-md flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
               </div>
-              <div>
-                <p className="text-sm text-red-700">즐겨찾기</p>
-                <p className="text-xl font-bold text-red-900">{stats.favoriteCount}개</p>
+              <div className="min-w-0">
+                <p className="text-xs text-red-700 truncate">즐겨찾기</p>
+                <p className="text-base sm:text-lg font-bold text-red-900">{stats.favoriteCount}개</p>
               </div>
             </div>
           </motion.div>
         </div>
 
-        {/* Categories */}
-        <div className="mb-6">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+        {/* Categories - Compact Version */}
+        <div className="mb-4">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
             카테고리
           </h3>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => setSelectedCategory('all')}
               className={cn(
-                'flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors',
+                'flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-md transition-colors',
                 selectedCategory === 'all'
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted hover:bg-accent text-muted-foreground'
               )}
             >
               전체
-              <span className="text-xs bg-background/20 px-1.5 py-0.5 rounded">
+              <span className="text-xs bg-background/20 px-1 py-0.5 rounded">
                 {stats.totalTemplates}
               </span>
             </motion.button>
@@ -338,15 +341,15 @@ export default function TemplatesPage() {
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setSelectedCategory(category.key)}
                   className={cn(
-                    'flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors',
+                    'flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-md transition-colors',
                     selectedCategory === category.key
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted hover:bg-accent text-muted-foreground'
                   )}
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className="w-3.5 h-3.5" />
                   {category.label}
-                  <span className="text-xs bg-background/20 px-1.5 py-0.5 rounded">
+                  <span className="text-xs bg-background/20 px-1 py-0.5 rounded">
                     {category.count}
                   </span>
                 </motion.button>
@@ -355,27 +358,92 @@ export default function TemplatesPage() {
           </div>
         </div>
 
-        {/* Search and Filters */}
-        <SearchAndFilters
-          type="templates"
-          filters={filters}
-          onFiltersChange={setFilters as (filters: Partial<TemplateFilters | DocumentFilters>) => void}
-          onReset={resetFilters}
-        />
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto relative">
+        {/* Filters and Search - Sticky Top Bar */}
+        <div className="sticky top-0 z-10 bg-background/98 backdrop-blur-md border-b border-border shadow-sm">
+          <div className="px-4 py-3">
+            <div className="flex items-center gap-3">
+              {/* Search */}
+              <div className="flex-1 max-w-sm relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="템플릿 검색..."
+                  value={filters.searchTerm}
+                  onChange={(e) => setFilters({ searchTerm: e.target.value })}
+                  className="w-full pl-10 pr-8 py-2 bg-muted/50 border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:bg-background transition-all text-sm"
+                />
+                {filters.searchTerm && (
+                  <button
+                    onClick={() => setFilters({ searchTerm: '' })}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-background rounded-full transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5 text-muted-foreground" />
+                  </button>
+                )}
+              </div>
+
+              {/* Quick Filters */}
+              <div className="flex items-center gap-1.5">
+                {/* Favorites Toggle */}
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setFilters({ showFavoritesOnly: !filters.showFavoritesOnly })}
+                  className={cn(
+                    'flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-lg transition-all',
+                    filters.showFavoritesOnly
+                      ? 'bg-red-100 text-red-700 hover:bg-red-200 shadow-sm'
+                      : 'bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground'
+                  )}
+                  title="즐겨찾기만 보기"
+                >
+                  <Star className={cn('w-4 h-4', filters.showFavoritesOnly && 'fill-current')} />
+                  <span className="hidden md:inline text-xs">즐겨찾기</span>
+                </motion.button>
+
+                {/* Sort Toggle */}
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setFilters({ sortOrder: filters.sortOrder === 'desc' ? 'asc' : 'desc' })}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground rounded-lg transition-all"
+                  title={filters.sortOrder === 'desc' ? '내림차순' : '오름차순'}
+                >
+                  {filters.sortOrder === 'desc' ? (
+                    <TrendingUp className="w-4 h-4" />
+                  ) : (
+                    <TrendingUp className="w-4 h-4 rotate-180" />
+                  )}
+                  <span className="hidden md:inline text-xs">정렬</span>
+                </motion.button>
+
+                {/* Advanced Filters */}
+                <SearchAndFilters
+                  type="templates"
+                  filters={filters}
+                  onFiltersChange={setFilters as (filters: Partial<TemplateFilters | DocumentFilters>) => void}
+                  onReset={resetFilters}
+                  className="flex items-center"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Popular Templates Section */}
         {selectedCategory === 'all' && !filters.searchTerm && popularTemplates.length > 0 && (
-          <div className="p-6 border-b border-border">
-            <div className="flex items-center justify-between mb-4">
+          <div className="p-4 border-b border-border">
+            <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-primary" />
                 인기 템플릿
               </h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {popularTemplates.map((template, index) => (
                 <motion.div
                   key={template.id}
@@ -397,15 +465,15 @@ export default function TemplatesPage() {
 
         {/* Favorite Templates Section */}
         {selectedCategory === 'all' && !filters.searchTerm && favoriteTemplates.length > 0 && (
-          <div className="p-6 border-b border-border">
-            <div className="flex items-center justify-between mb-4">
+          <div className="p-4 border-b border-border">
+            <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                 <Star className="w-5 h-5 text-primary" />
                 즐겨찾기 템플릿
               </h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {favoriteTemplates.slice(0, 6).map((template, index) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              {favoriteTemplates.slice(0, 8).map((template, index) => (
                 <motion.div
                   key={template.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -425,7 +493,7 @@ export default function TemplatesPage() {
         )}
 
         {/* All Templates */}
-        <div className="p-6">
+        <div className="p-4">
           {templates.length === 0 ? (
             <EmptyState
               type={getEmptyStateType()}
@@ -433,7 +501,7 @@ export default function TemplatesPage() {
             />
           ) : (
             <>
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-foreground">
                   {selectedCategory === 'all' ? '모든 템플릿' : TEMPLATE_CATEGORY_LABELS[selectedCategory]}
                 </h2>
@@ -442,7 +510,7 @@ export default function TemplatesPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
                 {templates.map((template, index) => (
                   <motion.div
                     key={template.id}
