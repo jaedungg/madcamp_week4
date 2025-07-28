@@ -6,7 +6,6 @@ import { Plus, Download, Upload, Trash2, Search, Filter, Star } from 'lucide-rea
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import DocumentCard from '@/components/documents/DocumentCard';
-import SearchAndFilters from '@/components/documents/SearchAndFilters';
 import ViewToggle from '@/components/documents/ViewToggle';
 import EmptyState from '@/components/documents/EmptyState';
 import { cn } from '@/lib/utils';
@@ -525,7 +524,7 @@ export default function DocumentsPage() {
             )}>
               {documents.map((document, index) => (
                 <motion.div
-                  key={document.id}
+                  key={`document-${document.id}-${index}`}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
@@ -569,7 +568,7 @@ export default function DocumentsPage() {
                 const page = i + 1;
                 return (
                   <button
-                    key={page}
+                    key={`page-${page}`}
                     onClick={() => setCurrentPage(page)}
                     className={cn(
                       'px-3 py-2 rounded-lg',

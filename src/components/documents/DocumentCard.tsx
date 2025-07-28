@@ -174,7 +174,7 @@ export default function DocumentCard({
                   <Type className="w-3 h-3" />
                   {(document.wordCount || 0).toLocaleString()}자
                 </div>
-                {document.tags.length > 0 && (
+                {document.tags && document.tags.length > 0 && (
                   <div className="flex items-center gap-1">
                     <Tag className="w-3 h-3" />
                     {document.tags.slice(0, 2).join(', ')}
@@ -372,7 +372,7 @@ export default function DocumentCard({
       </p>
 
       {/* Tags */}
-      {document.tags.length > 0 && (
+      {document.tags && document.tags.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-4">
           {document.tags.slice(0, 3).map((tag) => (
             <span
