@@ -1,66 +1,130 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Download, Upload, Trash2 } from 'lucide-react';
-import { useDocumentStore } from '@/stores/documentStore';
-import { useUserStore } from '@/stores/userStore';
-import { Document } from '@/types/document';
-import { TemplateFilters } from '@/types/template';
-import { DocumentFilters } from '@/types/document';
+import { Plus, Download, Upload, Trash2, Search, Filter, Star } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import DocumentCard from '@/components/documents/DocumentCard';
 import SearchAndFilters from '@/components/documents/SearchAndFilters';
 import ViewToggle from '@/components/documents/ViewToggle';
 import EmptyState from '@/components/documents/EmptyState';
 import { cn } from '@/lib/utils';
+import { Document } from '@/types/document';
+
+interface DocumentsResponse {
+  success: boolean;
+  documents: Document[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+  stats: Array<{
+    category: string;
+    _count: { _all: number };
+  }>;
+}
 
 export default function DocumentsPage() {
-  const {
-    filters,
-    viewMode,
-    selectedDocuments,
-    setFilters,
-    resetFilters,
-    setViewMode,
-    getFilteredDocuments,
-    createDocument,
-    duplicateDocument,
-    deleteDocument,
-    selectDocument,
-    clearSelection,
-    deleteSelected,
-    exportDocuments,
-    importDocuments,
-    getStats
-  } = useDocumentStore();
-
-  const { incrementDocumentCount } = useUserStore();
+  const { data: session } = useSession();
+  const router = useRouter();
+  
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // 필터링 및 검색 상태
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('updated_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  
+  // 페이지네이션 상태
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalDocuments, setTotalDocuments] = useState(0);
+  const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
+  const limit = 12;
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
 
-  const documents = getFilteredDocuments();
-  const stats = getStats();
+  // 문서 목록 불러오기
+  const loadDocuments = async () => {
+    if (!session?.user?.email) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const params = new URLSearchParams({
+        user_id: session.user.email,
+        page: currentPage.toString(),
+        limit: limit.toString(),
+        category: selectedCategory,
+        status: selectedStatus,
+        search: searchQuery,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
+        favoritesOnly: favoritesOnly.toString()
+      });
+
+      const response = await fetch(`/api/documents?${params}`);
+      
+      if (!response.ok) {
+        throw new Error('문서 목록을 불러올 수 없습니다.');
+      }
+
+      const data: DocumentsResponse = await response.json();
+      
+      if (data.success) {
+        setDocuments(data.documents);
+        setTotalPages(data.pagination.totalPages);
+        setTotalDocuments(data.pagination.total);
+      } else {
+        throw new Error('문서 목록을 불러오는데 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('문서 목록 불러오기 오류:', error);
+      setError(error instanceof Error ? error.message : '문서 목록을 불러오는 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCreateDocument = () => {
-    const newDoc = createDocument();
-    incrementDocumentCount();
-    // Navigate to editor
-    window.location.href = `/editor?id=${newDoc.id}`;
+    router.push('/editor');
   };
 
   const handleEditDocument = (document: Document) => {
-    window.location.href = `/editor?id=${document.id}`;
+    router.push(`/editor?id=${document.id}`);
   };
 
-  const handleDuplicateDocument = (document: Document) => {
+  const handleDuplicateDocument = async (document: Document) => {
     try {
-      const duplicatedDoc = duplicateDocument(document.id);
-      incrementDocumentCount();
-      // Show success feedback (you could add a toast notification here)
-      console.log('문서가 복사되었습니다:', duplicatedDoc.title);
+      const response = await fetch(`/api/documents/${document.id}/duplicate`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('문서 복제에 실패했습니다.');
+      }
+
+      const duplicatedDoc = await response.json();
+      
+      // 목록 맨 앞에 추가
+      setDocuments(prev => [duplicatedDoc, ...prev]);
+      setTotalDocuments(prev => prev + 1);
+      
+      console.log('문서가 복제되었습니다.');
     } catch (error) {
-      console.error('문서 복사 실패:', error);
+      console.error('문서 복제 오류:', error);
+      alert(error instanceof Error ? error.message : '문서 복제 중 오류가 발생했습니다.');
     }
   };
 
@@ -68,10 +132,27 @@ export default function DocumentsPage() {
     setShowDeleteConfirm(document.id);
   };
 
-  const confirmDelete = () => {
-    if (showDeleteConfirm) {
-      deleteDocument(showDeleteConfirm);
+  const confirmDelete = async () => {
+    if (!showDeleteConfirm) return;
+
+    try {
+      const response = await fetch(`/api/documents/${showDeleteConfirm}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('문서 삭제에 실패했습니다.');
+      }
+
+      // 목록에서 제거
+      setDocuments(prev => prev.filter(doc => doc.id !== showDeleteConfirm));
+      setTotalDocuments(prev => prev - 1);
       setShowDeleteConfirm(null);
+      
+      console.log('문서가 삭제되었습니다.');
+    } catch (error) {
+      console.error('문서 삭제 오류:', error);
+      alert(error instanceof Error ? error.message : '문서 삭제 중 오류가 발생했습니다.');
     }
   };
 
@@ -79,14 +160,69 @@ export default function DocumentsPage() {
     setShowBulkDeleteConfirm(true);
   };
 
-  const confirmBulkDelete = () => {
-    deleteSelected();
-    setShowBulkDeleteConfirm(false);
+  const confirmBulkDelete = async () => {
+    try {
+      const response = await fetch('/api/documents/bulk-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentIds: selectedDocuments }),
+      });
+
+      if (!response.ok) {
+        throw new Error('문서 삭제에 실패했습니다.');
+      }
+
+      // 목록에서 제거
+      setDocuments(prev => prev.filter(doc => !selectedDocuments.includes(doc.id)));
+      setTotalDocuments(prev => prev - selectedDocuments.length);
+      setSelectedDocuments([]);
+      setShowBulkDeleteConfirm(false);
+      
+      console.log('선택된 문서들이 삭제되었습니다.');
+    } catch (error) {
+      console.error('일괄 삭제 오류:', error);
+      alert(error instanceof Error ? error.message : '문서 삭제 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 문서 즐겨찾기 토글
+  const handleToggleFavorite = async (documentId: string) => {
+    try {
+      const response = await fetch(`/api/documents/${documentId}/favorite`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('즐겨찾기 변경에 실패했습니다.');
+      }
+
+      const updatedDoc = await response.json();
+      
+      // 목록에서 업데이트
+      setDocuments(prev => prev.map(doc => 
+        doc.id === documentId 
+          ? { ...doc, is_favorite: updatedDoc.is_favorite }
+          : doc
+      ));
+    } catch (error) {
+      console.error('즐겨찾기 토글 오류:', error);
+      alert(error instanceof Error ? error.message : '즐겨찾기 변경 중 오류가 발생했습니다.');
+    }
   };
 
   const handleExportDocuments = async () => {
     try {
-      const blob = await exportDocuments();
+      const response = await fetch('/api/documents/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: session?.user?.email }),
+      });
+
+      if (!response.ok) {
+        throw new Error('문서 내보내기에 실패했습니다.');
+      }
+
+      const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -97,6 +233,7 @@ export default function DocumentsPage() {
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error('문서 내보내기 실패:', error);
+      alert(error instanceof Error ? error.message : '문서 내보내기 중 오류가 발생했습니다.');
     }
   };
 
@@ -105,17 +242,32 @@ export default function DocumentsPage() {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const data = JSON.parse(e.target?.result as string);
         if (data.documents && Array.isArray(data.documents)) {
-          importDocuments(data.documents);
+          const response = await fetch('/api/documents/import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              documents: data.documents,
+              user_id: session?.user?.email
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error('문서 가져오기에 실패했습니다.');
+          }
+
+          // 목록 새로고침
+          loadDocuments();
           console.log('문서를 성공적으로 가져왔습니다.');
         } else {
-          console.error('올바르지 않은 파일 형식입니다.');
+          alert('올바르지 않은 파일 형식입니다.');
         }
       } catch (error) {
         console.error('파일 읽기 실패:', error);
+        alert(error instanceof Error ? error.message : '파일 처리 중 오류가 발생했습니다.');
       }
     };
     reader.readAsText(file);
@@ -124,9 +276,9 @@ export default function DocumentsPage() {
   };
 
   const getEmptyStateType = () => {
-    if (filters.searchTerm) return 'search';
-    if (filters.showFavoritesOnly) return 'favorites';
-    if (filters.category !== 'all' || filters.status !== 'all') return 'filter';
+    if (searchQuery) return 'search';
+    if (favoritesOnly) return 'favorites';
+    if (selectedCategory !== 'all' || selectedStatus !== 'all') return 'filter';
     return 'documents';
   };
 
@@ -135,11 +287,14 @@ export default function DocumentsPage() {
 
     switch (emptyType) {
       case 'search':
-        setFilters({ searchTerm: '' });
+        setSearchQuery('');
         break;
       case 'filter':
       case 'favorites':
-        resetFilters();
+        setSearchQuery('');
+        setSelectedCategory('all');
+        setSelectedStatus('all');
+        setFavoritesOnly(false);
         break;
       case 'documents':
       default:
@@ -147,6 +302,61 @@ export default function DocumentsPage() {
         break;
     }
   };
+
+  // 문서 선택 처리
+  const handleSelectDocument = (documentId: string) => {
+    setSelectedDocuments(prev => 
+      prev.includes(documentId)
+        ? prev.filter(id => id !== documentId)
+        : [...prev, documentId]
+    );
+  };
+
+  const clearSelection = () => {
+    setSelectedDocuments([]);
+  };
+
+  // 필터 변경 시 문서 재로딩
+  useEffect(() => {
+    if (session?.user?.email) {
+      setCurrentPage(1); // 필터 변경 시 첫 페이지로
+      loadDocuments();
+    }
+  }, [session, searchQuery, selectedCategory, selectedStatus, sortBy, sortOrder, favoritesOnly]);
+
+  // 페이지 변경 시 문서 재로딩
+  useEffect(() => {
+    if (session?.user?.email) {
+      loadDocuments();
+    }
+  }, [currentPage]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">문서를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <button 
+            onClick={loadDocuments}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+          >
+            다시 시도
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -156,7 +366,7 @@ export default function DocumentsPage() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">모든 문서</h1>
             <p className="text-muted-foreground">
-              총 {stats.totalDocuments}개의 문서 • {stats.totalWords.toLocaleString()}자
+              총 {totalDocuments}개의 문서
             </p>
           </div>
 
@@ -237,12 +447,58 @@ export default function DocumentsPage() {
         {/* Search and Filters */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex-1">
-            <SearchAndFilters
-              type="documents"
-              filters={filters}
-              onFiltersChange={setFilters as (filters: Partial<TemplateFilters | DocumentFilters>) => void}
-              onReset={resetFilters}
-            />
+            <div className="flex items-center gap-4">
+              {/* Search */}
+              <div className="flex-1 max-w-md">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="문서 검색..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              </div>
+
+              {/* Category Filter */}
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="all">모든 카테고리</option>
+                <option value="draft">초안</option>
+                <option value="published">게시됨</option>
+                <option value="archived">보관됨</option>
+              </select>
+
+              {/* Status Filter */}
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="all">모든 상태</option>
+                <option value="active">활성</option>
+                <option value="inactive">비활성</option>
+              </select>
+
+              {/* Favorites Only */}
+              <button
+                onClick={() => setFavoritesOnly(!favoritesOnly)}
+                className={cn(
+                  'flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors',
+                  favoritesOnly
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted hover:bg-accent'
+                )}
+              >
+                <Star className="w-4 h-4" />
+                즐겨찾기
+              </button>
+            </div>
           </div>
 
           <ViewToggle
@@ -280,20 +536,61 @@ export default function DocumentsPage() {
                   onClick={(e) => {
                     if (e.ctrlKey || e.metaKey) {
                       e.preventDefault();
-                      selectDocument(document.id);
+                      handleSelectDocument(document.id);
                     }
                   }}
                 >
                   <DocumentCard
                     document={document}
                     viewMode={viewMode}
-                    onEdit={handleEditDocument}
-                    onDuplicate={handleDuplicateDocument}
-                    onDelete={handleDeleteDocument}
+                    onEdit={() => handleEditDocument(document)}
+                    onDuplicate={() => handleDuplicateDocument(document)}
+                    onDelete={() => handleDeleteDocument(document)}
                   />
                 </motion.div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 p-6">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-2 border border-border rounded-lg hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              이전
+            </button>
+            
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const page = i + 1;
+                return (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={cn(
+                      'px-3 py-2 rounded-lg',
+                      currentPage === page
+                        ? 'bg-primary text-primary-foreground'
+                        : 'hover:bg-accent'
+                    )}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+            </div>
+            
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-2 border border-border rounded-lg hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              다음
+            </button>
           </div>
         )}
       </div>

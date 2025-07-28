@@ -1,6 +1,7 @@
 // app/api/documents/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 export async function POST(req: NextRequest) {
   const raw = await req.text()
@@ -13,6 +14,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 })
     }
 
+    // user_id가 이메일인지 UUID인지 확인하고 UUID로 변환
+    let actualUserId = user_id
+    const isEmail = user_id.includes('@')
+    
+    if (isEmail) {
+      // 이메일인 경우 사용자를 찾아서 UUID를 가져옴
+      const user = await prisma.users.findUnique({
+        where: { email: user_id },
+        select: { id: true }
+      })
+      
+      if (user) {
+        actualUserId = user.id
+      } else {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      }
+    }
+
     const excerpt = content ? content.slice(0, 200) : ''
     const wordCount = content ? content.trim().split(/\s+/).length : 0
 
@@ -22,7 +41,7 @@ export async function POST(req: NextRequest) {
         content,
         category,
         tags,
-        user_id,
+        user_id: actualUserId,
         excerpt,
         word_count: wordCount,
       },
@@ -49,16 +68,38 @@ export async function GET(req: NextRequest) {
     const favoritesOnly = searchParams.get('favoritesOnly') === 'true'
     const userId = searchParams.get('user_id') // 필수 아님
 
-    const where: any = {}
+    const where: Prisma.documentsWhereInput = {}
 
-    if (userId) where.user_id = userId
+    if (userId) {
+      // user_id가 이메일인지 UUID인지 확인
+      const isEmail = userId.includes('@')
+      
+      if (isEmail) {
+        // 이메일인 경우 사용자를 찾아서 UUID를 가져옴
+        const user = await prisma.users.findUnique({
+          where: { email: userId },
+          select: { id: true }
+        })
+        
+        if (user) {
+          where.user_id = user.id
+        } else {
+          return NextResponse.json({ error: 'User not found' }, { status: 404 })
+        }
+      } else {
+        // UUID인 경우 직접 사용
+        where.user_id = userId
+      }
+    }
     if (category !== 'all') where.category = category
     if (status !== 'all') where.status = status
     if (favoritesOnly) where.is_favorite = true
     if (search) {
-      where.search_vector = {
-        search: search,
-      }
+      // search_vector 대신 title과 content에서 검색
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { content: { contains: search, mode: 'insensitive' } }
+      ]
     }
 
     const total = await prisma.documents.count({ where })

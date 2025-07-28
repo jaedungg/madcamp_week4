@@ -67,6 +67,7 @@ interface AIEditorProps {
   placeholder?: string;
   className?: string;
   onPredictionError?: (error: string) => void;
+  onEditorReady?: (editor: Editor) => void;
 }
 
 interface Command {
@@ -85,7 +86,8 @@ export default function AIEditor({
   onChange,
   placeholder = "글을 작성하거나 '/'를 입력해 AI 명령어를 사용하세요",
   className,
-  onPredictionError
+  onPredictionError,
+  onEditorReady
 }: AIEditorProps) {
   // store에서 예측 설정 가져오기
   const enablePrediction = usePredictionEnabled();
@@ -155,6 +157,13 @@ export default function AIEditor({
     enabled: enablePrediction,
     onError: onPredictionError
   });
+
+  // 에디터가 준비되면 콜백 호출
+  useEffect(() => {
+    if (editor && onEditorReady) {
+      onEditorReady(editor);
+    }
+  }, [editor, onEditorReady]);
 
   // 키보드 이벤트 처리를 위한 useEffect
   useEffect(() => {

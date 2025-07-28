@@ -31,27 +31,7 @@ export async function GET(req: NextRequest) {
     })
 
     // RecentDocument 형식으로 변환
-    type RecentAccessLog = {
-      accessed_at: Date;
-      time_spent?: number;
-      documents: {
-        id: string;
-        title: string;
-        content?: string;
-        excerpt?: string;
-        word_count?: number;
-        category?: string;
-        tags?: string[];
-        is_favorite?: boolean;
-        created_at: Date;
-        updated_at: Date;
-        last_modified_at?: Date;
-        status?: string;
-        ai_requests_used?: number;
-      };
-    };
-
-    const recentDocuments = recentAccessLogs.map((log: RecentAccessLog) => ({
+    const recentDocuments = recentAccessLogs.map((log) => ({
       // Document 기본 정보
       id: log.documents.id,
       title: log.documents.title,
