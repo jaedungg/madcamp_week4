@@ -2,12 +2,12 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  BookTemplate, 
-  Plus, 
-  Star, 
-  TrendingUp, 
-  Download, 
+import {
+  BookTemplate,
+  Plus,
+  Star,
+  TrendingUp,
+  Download,
   Upload,
   Sparkles,
   Mail,
@@ -58,7 +58,7 @@ export default function TemplatesPage() {
 
   const { createDocument } = useDocumentStore();
   const { incrementDocumentCount } = useUserStore();
-  
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
@@ -71,11 +71,11 @@ export default function TemplatesPage() {
     // Track template usage
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useTemplate(template.id);
-    
+
     // Create new document with template content
     const newDoc = createDocument(template.title, template.category as DocumentCategory);
     incrementDocumentCount();
-    
+
     // Navigate to editor with template content
     const params = new URLSearchParams({
       id: newDoc.id,
@@ -155,7 +155,7 @@ export default function TemplatesPage() {
 
   const handleEmptyStateAction = () => {
     const emptyType = getEmptyStateType();
-    
+
     switch (emptyType) {
       case 'search':
         setFilters({ searchTerm: '' });
@@ -192,7 +192,7 @@ export default function TemplatesPage() {
               다양한 상황에 맞는 템플릿으로 글쓰기를 시작해보세요
             </p>
           </div>
-          
+
           <div className="flex items-center gap-3">
             {/* Import/Export */}
             <div className="flex items-center gap-2">
@@ -212,7 +212,7 @@ export default function TemplatesPage() {
                 <Upload className="w-4 h-4" />
                 가져오기
               </motion.label>
-              
+
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -328,7 +328,7 @@ export default function TemplatesPage() {
                 {stats.totalTemplates}
               </span>
             </motion.button>
-            
+
             {categories.map((category) => {
               const Icon = category.icon;
               return (
@@ -441,7 +441,7 @@ export default function TemplatesPage() {
                   {templates.length}개 템플릿
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {templates.map((template, index) => (
                   <motion.div
@@ -502,7 +502,7 @@ export default function TemplatesPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-card p-6 rounded-lg shadow-lg max-w-md mx-4"
+            className="bg-card bg-white p-6 rounded-lg shadow-lg max-w-md mx-4"
           >
             <h3 className="text-lg font-semibold text-foreground mb-3">
               새 템플릿 만들기

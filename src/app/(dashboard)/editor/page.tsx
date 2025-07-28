@@ -14,6 +14,7 @@ import {
   insertOrReplaceText
 } from '@/lib/ai/services';
 import { Editor } from '@tiptap/core';
+import { transformDocument } from '@/lib/transform';
 
 export default function EditorPage() {
   const { data: session } = useSession();
@@ -126,18 +127,52 @@ export default function EditorPage() {
     if (!session?.user?.email) return;
 
     try {
-      const response = await fetch(`/api/documents/${docId}?user_id=${encodeURIComponent(session.user.email)}`);
+      console.log('문서 로드 시작:', { docId, userEmail: session.user.email });
+      
+      // URL 파라미터 제거 - API에서 세션 정보 사용
+      const response = await fetch(`/api/documents/${docId}`);
+      
+      console.log('API 응답 상태:', response.status, response.ok);
       
       if (!response.ok) {
         throw new Error('문서를 불러올 수 없습니다.');
       }
 
-      const document = await response.json();
+      const data = await response.json();
+      console.log('API 응답 데이터:', data);
+      
+      if (!data.success) {
+        throw new Error(data.error || '문서를 불러올 수 없습니다.');
+      }
+
+      // API 응답을 camelCase로 변환 
+      const document = transformDocument(data.document);
+      console.log('변환된 문서 데이터:', document);
+      console.log('문서 내용 길이:', document.content?.length || 0);
       
       setDocumentId(document.id);
       setDocumentTitle(document.title || '제목 없는 문서');
       setContent(document.content || '');
-      setLastSaved(new Date(document.updated_at || document.created_at));
+      setLastSaved(new Date(document.updatedAt || document.createdAt));
+      
+      // 문서 접근 로그 기록
+      if (session?.user?.id) {
+        try {
+          await fetch(`/api/documents/${docId}/access`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              user_id: session.user.id,
+              time_spent: 0, // 로드 시점에는 0
+            }),
+          });
+        } catch (logError) {
+          console.warn('문서 접근 로그 기록 실패:', logError);
+          // 로그 실패는 사용자 경험을 방해하지 않음
+        }
+      }
       
       console.log('문서 불러오기 완료:', document);
     } catch (error) {
@@ -149,6 +184,7 @@ export default function EditorPage() {
   // 페이지 로드 시 URL에서 문서 ID 확인 및 문서 불러오기
   useEffect(() => {
     const docId = searchParams.get('id');
+    console.log('useEffect 실행:', { docId, hasSession: !!session?.user?.email, userEmail: session?.user?.email });
     if (docId && session?.user?.email) {
       loadDocument(docId);
     }
@@ -399,6 +435,7 @@ export default function EditorPage() {
         <div className="flex-1 p-8">
           <div className="max-w-4xl mx-auto">
             <AIEditor
+              key={documentId || 'new-document'}
               content={content}
               onChange={handleContentChange}
               placeholder="글을 작성하거나 '/'를 입력해 AI 명령어를 사용하세요..."
