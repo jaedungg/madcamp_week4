@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
+import { createExcerptFromHtml, countWordsFromHtml } from '@/lib/utils/excerpt'
 
 export async function POST(req: NextRequest) {
   try {
@@ -32,8 +33,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const excerpt = content ? content.slice(0, 200) : ''
-    const wordCount = content ? content.trim().split(/\s+/).length : 0
+    // excerpt와 단어 수를 정확하게 계산
+    const excerpt = createExcerptFromHtml(content || '', 150)
+    const wordCount = countWordsFromHtml(content || '')
 
     const document = await prisma.documents.create({
       data: {

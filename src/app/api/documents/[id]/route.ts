@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth'
+import { createExcerptFromHtml, countWordsFromHtml } from '@/lib/utils/excerpt'
 
 const updateSchema = z.object({
   title: z.string().optional(),
@@ -34,7 +35,7 @@ export async function GET(
       where: { email: session.user.email },
       select: { id: true }
     })
-    
+
     if (!user) {
       console.log('사용자를 찾을 수 없음:', session.user.email);
       return NextResponse.json(
@@ -44,17 +45,17 @@ export async function GET(
     }
 
     const document = await prisma.documents.findFirst({
-      where: { 
+      where: {
         id: id,
         user_id: user.id // UUID로 검색
       },
     })
 
-    console.log('조회된 문서:', { 
-      found: !!document, 
+    console.log('조회된 문서:', {
+      found: !!document,
       documentId: document?.id,
       contentLength: document?.content?.length || 0,
-      title: document?.title 
+      title: document?.title
     });
 
     if (!document) {
@@ -95,7 +96,7 @@ export async function PUT(
       where: { email: session.user.email },
       select: { id: true }
     })
-    
+
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'User not found' },
@@ -115,7 +116,7 @@ export async function PUT(
 
     // 사용자 소유 문서인지 먼저 확인
     const existingDoc = await prisma.documents.findFirst({
-      where: { 
+      where: {
         id: id,
         user_id: user.id // UUID로 검색
       }
@@ -128,13 +129,23 @@ export async function PUT(
       )
     }
 
+    // content가 변경된 경우 excerpt와 word_count 자동 업데이트
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateData: Record<string, any> = {
+      ...parsed.data,
+      updated_at: new Date(),
+      last_modified_at: new Date(),
+    }
+
+    // content가 변경된 경우에만 excerpt와 word_count를 재계산
+    if (parsed.data.content !== undefined) {
+      updateData.excerpt = createExcerptFromHtml(parsed.data.content, 150)
+      updateData.word_count = countWordsFromHtml(parsed.data.content)
+    }
+
     const document = await prisma.documents.update({
       where: { id: id },
-      data: {
-        ...parsed.data,
-        updated_at: new Date(),
-        last_modified_at: new Date(),
-      },
+      data: updateData,
     })
 
     return NextResponse.json({ success: true, document })
@@ -152,14 +163,14 @@ export async function DELETE(
 ) {
   try {
     console.log('DELETE 요청 시작');
-    
+
     // 사용자 인증 확인
     const session = await getServerSession(authOptions)
-    console.log('세션 정보:', { 
-      hasSession: !!session, 
-      userEmail: session?.user?.email 
+    console.log('세션 정보:', {
+      hasSession: !!session,
+      userEmail: session?.user?.email
     });
-    
+
     if (!session?.user?.email) {
       console.log('인증 실패: 세션이 없음');
       return NextResponse.json(
@@ -176,7 +187,7 @@ export async function DELETE(
       where: { email: session.user.email },
       select: { id: true }
     })
-    
+
     if (!user) {
       console.log('사용자를 찾을 수 없음');
       return NextResponse.json(
@@ -187,16 +198,16 @@ export async function DELETE(
 
     // 사용자 소유 문서인지 먼저 확인
     const existingDoc = await prisma.documents.findFirst({
-      where: { 
+      where: {
         id: id,
         user_id: user.id // UUID로 검색
       }
     })
 
-    console.log('기존 문서 확인:', { 
-      found: !!existingDoc, 
+    console.log('기존 문서 확인:', {
+      found: !!existingDoc,
       documentId: existingDoc?.id,
-      documentUserId: existingDoc?.user_id 
+      documentUserId: existingDoc?.user_id
     });
 
     if (!existingDoc) {

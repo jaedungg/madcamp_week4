@@ -11,6 +11,7 @@ import {
   RecentDocument,
   DOCUMENT_CATEGORY_LABELS
 } from '@/types/document';
+import { createExcerptFromHtml, countWordsFromHtml } from '@/lib/utils/excerpt';
 
 interface DocumentState {
   // Document data
@@ -154,16 +155,13 @@ const sampleDocuments: Document[] = [
 // Helper functions
 const generateId = () => `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+// 이제 새로운 유틸리티 함수들을 사용
 const generateExcerpt = (content: string, maxLength = 100): string => {
-  const cleanText = content.replace(/[#*\n]/g, ' ').trim();
-  return cleanText.length > maxLength 
-    ? cleanText.substring(0, maxLength) + '...'
-    : cleanText;
+  return createExcerptFromHtml(content, maxLength);
 };
 
 const countWords = (content: string): number => {
-  const cleanText = content.replace(/[#*\n]/g, ' ').trim();
-  return cleanText.split(/\s+/).filter(word => word.length > 0).length;
+  return countWordsFromHtml(content);
 };
 
 export const useDocumentStore = create<DocumentState>()(
