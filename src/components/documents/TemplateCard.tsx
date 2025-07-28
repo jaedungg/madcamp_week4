@@ -21,7 +21,12 @@ import {
   TEMPLATE_DIFFICULTY_LABELS,
   TEMPLATE_TONE_LABELS
 } from '@/types/template';
-import { DocumentCategory } from '@/types/document';
+import { 
+  DocumentCategory, 
+  DOCUMENT_CATEGORY_LABELS,
+  DOCUMENT_DIFFICULTY_LABELS,
+  DOCUMENT_TONE_LABELS
+} from '@/types/document';
 import { useTemplateStore } from '@/stores/templateStore';
 import { useDocumentStore } from '@/stores/documentStore';
 import { cn } from '@/lib/utils';
@@ -242,7 +247,7 @@ export default function TemplateCard({
 
       {/* Description */}
       <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-        {template.description}
+        {template.description || template.preview || '템플릿 설명이 없습니다.'}
       </p>
 
       {/* Metadata */}
@@ -291,15 +296,15 @@ export default function TemplateCard({
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1">
             <Users className="w-3 h-3" />
-            {template.usageCount.toLocaleString()}회 사용
+            {(template.usageCount || 0).toLocaleString()}회 사용
           </div>
           <div className="flex items-center gap-1">
             <Clock className="w-3 h-3" />
-            약 {template.estimatedWords}자
+            약 {template.estimatedWords || 100}자
           </div>
         </div>
 
-        {template.usageCount > 10 && (
+        {(template.usageCount || 0) > 10 && (
           <div className="flex items-center gap-1 text-orange-600">
             <TrendingUp className="w-3 h-3" />
             인기

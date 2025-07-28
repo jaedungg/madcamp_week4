@@ -30,11 +30,11 @@ interface DocumentsResponse {
 export default function DocumentsPage() {
   const { data: session } = useSession();
   const router = useRouter();
-  
+
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // 필터링 및 검색 상태
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -43,7 +43,7 @@ export default function DocumentsPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  
+
   // 페이지네이션 상태
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -75,13 +75,13 @@ export default function DocumentsPage() {
       });
 
       const response = await fetch(`/api/documents?${params}`);
-      
+
       if (!response.ok) {
         throw new Error('문서 목록을 불러올 수 없습니다.');
       }
 
       const data: DocumentsResponse = await response.json();
-      
+
       if (data.success) {
         // API 응답을 camelCase로 변환
         const transformedDocuments = transformDocuments(data.documents);
@@ -119,11 +119,11 @@ export default function DocumentsPage() {
 
       const data = await response.json();
       const duplicatedDoc = transformDocument(data.document || data);
-      
+
       // 목록 맨 앞에 추가
       setDocuments(prev => [duplicatedDoc, ...prev]);
       setTotalDocuments(prev => prev + 1);
-      
+
       // 성공 피드백 (콘솔 대신 사용자 친화적 알림)
       const successMessage = window.document.createElement('div');
       successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
@@ -161,7 +161,7 @@ export default function DocumentsPage() {
 
     try {
       console.log('삭제 요청:', { documentId: showDeleteConfirm, userEmail: session.user.email });
-      
+
       const response = await fetch(`/api/documents/${showDeleteConfirm}`, {
         method: 'DELETE',
       });
@@ -178,7 +178,7 @@ export default function DocumentsPage() {
       setDocuments(prev => prev.filter(doc => doc.id !== showDeleteConfirm));
       setTotalDocuments(prev => prev - 1);
       setShowDeleteConfirm(null);
-      
+
       // 성공 피드백
       const successMessage = window.document.createElement('div');
       successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
@@ -216,7 +216,7 @@ export default function DocumentsPage() {
       setTotalDocuments(prev => prev - selectedDocuments.length);
       setSelectedDocuments([]);
       setShowBulkDeleteConfirm(false);
-      
+
       // 성공 피드백
       const successMessage = window.document.createElement('div');
       successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
@@ -246,10 +246,10 @@ export default function DocumentsPage() {
 
       const data = await response.json();
       const updatedDoc = transformDocument(data.document || data);
-      
+
       // 목록에서 업데이트
-      setDocuments(prev => prev.map(doc => 
-        doc.id === documentId 
+      setDocuments(prev => prev.map(doc =>
+        doc.id === documentId
           ? { ...doc, isFavorite: updatedDoc.isFavorite }
           : doc
       ));
@@ -381,7 +381,7 @@ export default function DocumentsPage() {
 
   // 문서 선택 처리
   const handleSelectDocument = (documentId: string) => {
-    setSelectedDocuments(prev => 
+    setSelectedDocuments(prev =>
       prev.includes(documentId)
         ? prev.filter(id => id !== documentId)
         : [...prev, documentId]
@@ -423,7 +423,7 @@ export default function DocumentsPage() {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <p className="text-red-500 mb-4">{error}</p>
-          <button 
+          <button
             onClick={loadDocuments}
             className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
           >
@@ -640,7 +640,7 @@ export default function DocumentsPage() {
             >
               이전
             </button>
-            
+
             <div className="flex items-center gap-1">
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                 const page = i + 1;
@@ -660,7 +660,7 @@ export default function DocumentsPage() {
                 );
               })}
             </div>
-            
+
             <button
               onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
               disabled={currentPage === totalPages}

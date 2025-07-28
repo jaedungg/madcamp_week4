@@ -74,16 +74,24 @@ export default function TemplatesPage() {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useTemplate(template.id);
 
-    // Create new document with template content
-    const newDoc = createDocument(template.title, template.category as DocumentCategory);
+    // Get document store instance
+    const documentStore = useDocumentStore.getState();
+    
+    // Duplicate the template document to create a new document
+    const duplicatedDoc = documentStore.duplicateDocument(template.id);
     incrementDocumentCount();
 
-    // Navigate to editor with template content
-    const params = new URLSearchParams({
-      id: newDoc.id,
-      templateContent: template.content
+    // Mark the new document as a regular document (not a template)
+    documentStore.convertFromTemplate(duplicatedDoc.id);
+
+    // Update the title to remove template-specific naming
+    documentStore.updateDocument(duplicatedDoc.id, {
+      title: template.title.replace(' 템플릿', '').replace('(복사본)', '').trim() || '새 문서',
+      status: 'draft'
     });
-    window.location.href = `/editor?${params.toString()}`;
+
+    // Navigate to editor with the new document
+    window.location.href = `/editor?id=${duplicatedDoc.id}`;
   };
 
   const handleDuplicateTemplate = (template: Template) => {

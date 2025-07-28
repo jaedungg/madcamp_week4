@@ -6,9 +6,9 @@ import { Save, Share, MoreHorizontal, Loader2 } from 'lucide-react';
 import AIEditor from '@/components/editor/AIEditor';
 import { useSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
-import { 
-  generateText, 
-  improveText, 
+import {
+  generateText,
+  improveText,
   changeTone,
   getSelectedText,
   insertOrReplaceText
@@ -19,7 +19,7 @@ import { transformDocument } from '@/lib/transform';
 export default function EditorPage() {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
-  
+
   if (session) {
     console.log(session.user?.email);
   } else {
@@ -47,7 +47,7 @@ export default function EditorPage() {
     if (autoSaveTimeoutRef.current) {
       clearTimeout(autoSaveTimeoutRef.current);
     }
-    
+
     // 3초 후 자동 저장 실행
     autoSaveTimeoutRef.current = setTimeout(() => {
       if (session?.user?.email && (content || documentTitle !== '제목 없는 문서')) {
@@ -88,11 +88,11 @@ export default function EditorPage() {
 
       if (response.ok) {
         const savedDocument = await response.json();
-        
+
         if (!documentId && savedDocument.id) {
           setDocumentId(savedDocument.id);
         }
-        
+
         setLastSaved(new Date());
         console.log('자동 저장 완료:', savedDocument);
       }
@@ -128,19 +128,19 @@ export default function EditorPage() {
 
     try {
       console.log('문서 로드 시작:', { docId, userEmail: session.user.email });
-      
+
       // URL 파라미터 제거 - API에서 세션 정보 사용
       const response = await fetch(`/api/documents/${docId}`);
-      
+
       console.log('API 응답 상태:', response.status, response.ok);
-      
+
       if (!response.ok) {
         throw new Error('문서를 불러올 수 없습니다.');
       }
 
       const data = await response.json();
       console.log('API 응답 데이터:', data);
-      
+
       if (!data.success) {
         throw new Error(data.error || '문서를 불러올 수 없습니다.');
       }
@@ -149,12 +149,12 @@ export default function EditorPage() {
       const document = transformDocument(data.document);
       console.log('변환된 문서 데이터:', document);
       console.log('문서 내용 길이:', document.content?.length || 0);
-      
+
       setDocumentId(document.id);
       setDocumentTitle(document.title || '제목 없는 문서');
       setContent(document.content || '');
       setLastSaved(new Date(document.updatedAt || document.createdAt));
-      
+
       // 문서 접근 로그 기록
       if (session?.user?.id) {
         try {
@@ -173,7 +173,7 @@ export default function EditorPage() {
           // 로그 실패는 사용자 경험을 방해하지 않음
         }
       }
-      
+
       console.log('문서 불러오기 완료:', document);
     } catch (error) {
       console.error('문서 불러오기 오류:', error);
@@ -238,11 +238,11 @@ export default function EditorPage() {
       }
 
       const savedDocument = await response.json();
-      
+
       if (!documentId && savedDocument.id) {
         setDocumentId(savedDocument.id);
       }
-      
+
       setLastSaved(new Date());
       console.log('문서가 성공적으로 저장되었습니다:', savedDocument);
 
@@ -388,16 +388,16 @@ export default function EditorPage() {
               placeholder="제목 없는 문서"
             />
             <p className="text-sm text-muted-foreground">
-              {isSaving 
-                ? '저장 중...' 
-                : lastSaved 
-                  ? `${getTimeAgo(lastSaved)}에 저장됨` 
+              {isSaving
+                ? '저장 중...'
+                : lastSaved
+                  ? `${getTimeAgo(lastSaved)}에 저장됨`
                   : '저장되지 않음'
               }
             </p>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <motion.button
             whileHover={{ scale: 1.05 }}
@@ -409,7 +409,7 @@ export default function EditorPage() {
             <Save className={`w-4 h-4 ${isSaving ? 'animate-spin' : ''}`} />
             {isSaving ? '저장 중...' : '저장'}
           </motion.button>
-          
+
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -418,7 +418,7 @@ export default function EditorPage() {
             <Share className="w-4 h-4" />
             공유
           </motion.button>
-          
+
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -466,7 +466,7 @@ export default function EditorPage() {
                   </div>
                   <div className="text-sm text-muted-foreground">프롬프트를 기반으로 콘텐츠를 생성합니다</div>
                 </motion.button>
-                
+
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   onClick={handleAIImprove}
@@ -481,7 +481,7 @@ export default function EditorPage() {
                   </div>
                   <div className="text-sm text-muted-foreground">명확성과 문체를 개선합니다</div>
                 </motion.button>
-                
+
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   onClick={handleAIToneChange}
