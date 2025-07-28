@@ -6,10 +6,139 @@
     "description": "API for creating and fetching documents"
   },
   "paths": {
+    "/api/signup": {
+      "post": {
+        "summary": "사용자 회원가입",
+        "tags": ["Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "홍길동"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "test@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "test123!"
+                  }
+                },
+                "required": ["name", "email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "회원가입 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "name": {
+                          "type": "string",
+                          "example": "홍길동"
+                        },
+                        "email": {
+                          "type": "string",
+                          "format": "email",
+                          "example": "test@example.com"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "이미 존재하는 이메일입니다."
+          },
+          "500": {
+            "description": "회원가입 실패"
+          }
+        }
+      }
+    },
+    "/api/login": {
+      "post": {
+        "summary": "사용자 로그인",
+        "tags": ["Auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "test@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "mySecret123!"
+                  }
+                },
+                "required": ["email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "로그인 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "example": 1
+                    },
+                    "email": {
+                      "type": "string",
+                      "format": "email",
+                      "example": "test@example.com"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "이메일 또는 비밀번호가 올바르지 않습니다."
+          },
+          "500": {
+            "description": "서버 오류"
+          }
+        }
+      }
+    },
     "/api/documents": {
       "post": {
         "summary": "Create a document",
-        "tags": ["Docomunts CRUD"],
+        "tags": ["Documents CRUD"],
         "requestBody": {
           "required": true,
           "content": {
@@ -41,7 +170,7 @@
       },
       "get": {
         "summary": "Get list of documents",
-        "tags": ["Docomunts CRUD"],
+        "tags": ["Documents CRUD"],
         "parameters": [
           { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
           { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 } },
@@ -70,10 +199,64 @@
         }
       }
     },
+    "/api/documents/bulk-delete": {
+      "post": {
+        "summary": "Delete multiple documents",
+        "tags": ["Documents management"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "documentIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": ["documentIds"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Multiple documents deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "deletedCount": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "100개 제한을 초과하였거나 잘못된 문서 ID 형식입니다."
+          },
+          "404": {
+            "description": "요청한 문서 중 일부를 찾을 수 없습니다."
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
     "/api/documents/{id}": {
       "get": {
         "summary": "Get a document by ID",
-        "tags": ["Docomunts CRUD"],
+        "tags": ["Documents CRUD"],
         "parameters": [
           {
             "name": "id",
@@ -104,7 +287,7 @@
       },
       "put": {
         "summary": "Update a document",
-        "tags": ["Docomunts CRUD"],
+        "tags": ["Documents CRUD"],
         "parameters": [
           {
             "name": "id",
@@ -154,7 +337,7 @@
       },
       "delete": {
         "summary": "Delete a document",
-        "tags": ["Docomunts CRUD"],
+        "tags": ["Documents CRUD"],
         "parameters": [
           {
             "name": "id",
@@ -184,7 +367,7 @@
     "/api/documents/{id}/duplicate": {
       "post": {
         "summary": "Duplicate a document",
-        "tags": ["Docomunts management"],
+        "tags": ["Documents management"],
         "parameters": [
           {
             "name": "id",
@@ -216,7 +399,7 @@
     "/api/documents/{id}/favorite": {
       "put": {
         "summary": "Update is_favorte",
-        "tags": ["Docomunts management"],
+        "tags": ["Documents management"],
         "parameters": [
           {
             "name": "id",
@@ -257,6 +440,84 @@
           },
           "500": {
             "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/documents/recent": {
+      "get": {
+        "summary": "사용자의 최근 문서 조회",
+        "tags": ["Recent Documents"],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "조회할 사용자의 ID"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 10
+            },
+            "description": "조회할 문서 수 (기본값: 10)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "최근 문서 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "documents": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "example": "doc_123" },
+                          "title": { "type": "string", "example": "AI Report" },
+                          "content": { "type": "string", "example": "본문 내용..." },
+                          "excerpt": { "type": "string", "example": "요약 내용..." },
+                          "wordCount": { "type": "integer", "example": 1200 },
+                          "category": { "type": "string", "example": "Work" },
+                          "tags": {
+                            "type": "array",
+                            "items": { "type": "string" },
+                            "example": ["AI", "Research"]
+                          },
+                          "isFavorite": { "type": "boolean", "example": false },
+                          "createdAt": { "type": "string", "format": "date-time", "example": "2024-06-01T10:00:00Z" },
+                          "updatedAt": { "type": "string", "format": "date-time", "example": "2024-07-01T10:00:00Z" },
+                          "lastModifiedAt": { "type": "string", "format": "date-time", "example": "2024-07-15T10:00:00Z" },
+                          "status": { "type": "string", "example": "draft" },
+                          "aiRequestsUsed": { "type": "integer", "example": 3 },
+                          "lastAccessedAt": { "type": "string", "format": "date-time", "example": "2024-07-27T12:30:00Z" },
+                          "timeSpent": { "type": "number", "example": 12.5, "description": "분 단위 시간" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "필수 파라미터 누락 (user_id)"
+          },
+          "500": {
+            "description": "서버 내부 오류"
           }
         }
       }
@@ -310,7 +571,285 @@
           }
         }
       }
+    },
+    "/api/documents/stats": {
+      "get": {
+        "summary": "문서 통계 조회",
+        "tags": ["Documents Analytics"],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "특정 사용자의 문서 통계를 조회하려면 사용자 ID를 전달합니다."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "문서 통계 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "stats": {
+                      "type": "object",
+                      "properties": {
+                        "totalDocuments": { "type": "integer", "example": 120 },
+                        "totalWords": { "type": "integer", "example": 48000 },
+                        "avgWordsPerDocument": { "type": "number", "example": 400.0 },
+                        "documentsByCategory": {
+                          "type": "object",
+                          "properties": {
+                            "business-email": { "type": "integer", "example": 30 },
+                            "personal-letter": { "type": "integer", "example": 25 },
+                            "thank-you": { "type": "integer", "example": 15 },
+                            "apology-message": { "type": "integer", "example": 10 },
+                            "casual-message": { "type": "integer", "example": 40 }
+                          }
+                        },
+                        "documentsByStatus": {
+                          "type": "object",
+                          "properties": {
+                            "draft": { "type": "integer", "example": 50 },
+                            "published": { "type": "integer", "example": 60 },
+                            "archived": { "type": "integer", "example": 10 }
+                          }
+                        },
+                        "weeklyActivity": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "date": { "type": "string", "format": "date", "example": "2025-07-21" },
+                              "count": { "type": "integer", "example": 8 }
+                            }
+                          }
+                        },
+                        "aiUsageStats": {
+                          "type": "object",
+                          "properties": {
+                            "totalRequests": { "type": "integer", "example": 150 },
+                            "mostUsedFeature": { "type": "string", "example": "generate" },
+                            "costEstimate": { "type": "number", "example": 1.5 }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "문서 통계 조회 실패",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": { "type": "string", "example": "문서 통계를 가져오는데 실패했습니다." }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/documents/export": {
+      "get": {
+        "summary": "문서 내보내기 API 정보 조회",
+        "tags": ["Documents Import/Export"],
+        "responses": {
+          "200": {
+            "description": "API 설명 반환",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "프롬 문서 내보내기 API"
+                    },
+                    "version": {
+                      "type": "string",
+                      "example": "1.0.0"
+                    },
+                    "methods": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "example": ["POST"]
+                    },
+                    "description": {
+                      "type": "string",
+                      "example": "사용자의 문서를 JSON, CSV, PDF 형식으로 내보냅니다."
+                    },
+                    "supportedFormats": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "example": ["json", "csv", "pdf"]
+                    },
+                    "maxFileSizes": {
+                      "type": "object",
+                      "properties": {
+                        "json": { "type": "string", "example": "10MB" },
+                        "csv": { "type": "string", "example": "5MB" },
+                        "pdf": { "type": "string", "example": "20MB" }
+                      }
+                    },
+                    "usage": {
+                      "type": "object",
+                      "properties": {
+                        "endpoint": { "type": "string", "example": "POST /api/documents/export" },
+                        "headers": {
+                          "type": "object",
+                          "properties": {
+                            "Content-Type": { "type": "string", "example": "application/json" },
+                            "Authorization": { "type": "string", "example": "Bearer <token>" }
+                          }
+                        },
+                        "body": {
+                          "type": "object",
+                          "properties": {
+                            "format": { "type": "string", "example": "json | csv | pdf" },
+                            "documentIds": { "type": "string", "example": "string[] (선택사항, 없으면 모든 문서)" },
+                            "includeContent": { "type": "string", "example": "boolean (선택사항, 기본값: true)" }
+                          }
+                        },
+                        "response": {
+                          "type": "object",
+                          "properties": {
+                            "success": { "type": "string", "example": "boolean" },
+                            "downloadUrl": { "type": "string", "example": "string (성공시)" },
+                            "error": { "type": "string", "example": "string (실패시)" },
+                            "metadata": {
+                              "type": "object",
+                              "properties": {
+                                "count": { "type": "string", "example": "number" },
+                                "format": { "type": "string", "example": "string" },
+                                "fileSize": { "type": "string", "example": "number" },
+                                "timestamp": { "type": "string", "example": "string" }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "문서 내보내기 실행",
+        "tags": ["Documents Import/Export"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "format": {
+                    "type": "string",
+                    "enum": ["json", "csv", "pdf"],
+                    "example": "json"
+                  },
+                  "documentIds": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "example": ["doc1", "doc2"]
+                  },
+                  "includeContent": {
+                    "type": "boolean",
+                    "default": true,
+                    "example": true
+                  }
+                },
+                "required": ["format"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "내보내기 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "downloadUrl": { "type": "string", "example": "https://example.com/export/file123.json" },
+                    "metadata": {
+                      "type": "object",
+                      "properties": {
+                        "count": { "type": "integer", "example": 5 },
+                        "format": { "type": "string", "example": "json" },
+                        "fileSize": { "type": "integer", "example": 123456 },
+                        "timestamp": { "type": "string", "format": "date-time", "example": "2025-07-28T10:00:00Z" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 유효성 실패"
+          },
+          "401": {
+            "description": "인증 실패"
+          },
+          "404": {
+            "description": "문서 없음"
+          },
+          "413": {
+            "description": "파일 또는 요청 크기 초과"
+          },
+          "429": {
+            "description": "요청 제한 초과"
+          },
+          "500": {
+            "description": "서버 오류",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": false },
+                    "error": { "type": "string", "example": "파일 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요." },
+                    "metadata": {
+                      "type": "object",
+                      "properties": {
+                        "count": { "type": "integer", "example": 0 },
+                        "format": { "type": "string", "example": "unknown" },
+                        "fileSize": { "type": "integer", "example": 0 },
+                        "timestamp": { "type": "string", "format": "date-time", "example": "2025-07-28T10:00:00Z" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
+
   },
   "components": {
     "schemas": {
