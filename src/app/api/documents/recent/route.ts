@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
       };
     };
 
-    const recentDocuments = recentAccessLogs.map((log: RecentAccessLog) => ({
+    const recentDocuments = recentAccessLogs.map((log) => ({
       // Document 기본 정보
       id: log.documents.id,
       title: log.documents.title,
