@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -21,57 +21,53 @@ import { useUserStore } from '@/stores/userStore';
 import { useSession } from 'next-auth/react';
 
 const menuItems = [
-  {
-    icon: Plus,
-    label: '새 문서',
-    href: '/editor',
-    primary: true
-  },
-  {
-    icon: FileText,
-    label: '모든 문서',
-    href: '/documents'
-  },
-  {
-    icon: Clock,
-    label: '최근 문서',
-    href: '/recent'
-  },
-  {
-    icon: BookTemplate,
-    label: '템플릿',
-    href: '/templates'
-  }
+  { icon: Plus, label: '새 문서', href: '/editor', primary: true },
+  { icon: FileText, label: '모든 문서', href: '/documents' },
+  { icon: Clock, label: '최근 문서', href: '/recent' },
+  { icon: BookTemplate, label: '템플릿', href: '/templates' }
 ];
 
 const templateCategories = [
-  {
-    icon: Mail,
-    label: '이메일',
-    count: 12
-  },
-  {
-    icon: MessageSquare,
-    label: '편지',
-    count: 8
-  },
-  {
-    icon: PenTool,
-    label: '창작글',
-    count: 6
-  }
+  { icon: Mail, label: '이메일', count: 12 },
+  { icon: MessageSquare, label: '편지', count: 8 },
+  { icon: PenTool, label: '창작글', count: 6 }
 ];
 
 export default function DashboardSidebar() {
-  const session = useSession();
-  const userData = session.data?.user;
-  console.log("userData:", userData);
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
 
   const pathname = usePathname();
-  const { profile, plan } = useUserStore();
-  
+  const { profile, setProfile, plan } = useUserStore();
+
+  // ✅ 유저 정보 fetch
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (!userId) return;
+
+      try {
+        const res = await fetch(`/api/users/${userId}`);
+        const data = await res.json();
+
+        if (res.ok) {
+          setProfile({
+            name: data.name,
+            email: data.email,
+            avatar: data.profile_image || '',
+          });
+        } else {
+          console.error('유저 정보 로딩 실패:', data.error);
+        }
+      } catch (err) {
+        console.error('유저 정보 요청 중 에러:', err);
+      }
+    };
+
+    fetchUser();
+  }, [userId, setProfile]);
+
   const isActive = (path: string) => pathname === path;
-  
+
   return (
     <div className="w-64 bg-card border-r border-border flex flex-col">
       {/* Logo & Header */}
@@ -89,10 +85,9 @@ export default function DashboardSidebar() {
 
       {/* Navigation Menu */}
       <div className="flex-1 p-4 space-y-2">
-        {menuItems.map((item, index) => {
+        {menuItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);
-          
           return (
             <Link key={item.label} href={item.href}>
               <motion.div
@@ -172,7 +167,7 @@ export default function DashboardSidebar() {
             )}
           >
             <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-              {profile.avatar ? (
+              {/* {profile.avatar ? (
                 <img
                   src={profile.avatar}
                   alt={profile.name}
@@ -180,10 +175,11 @@ export default function DashboardSidebar() {
                 />
               ) : (
                 <User className="w-4 h-4 text-white" />
-              )}
+              )} */}
+              <User className="w-4 h-4 text-white" />
             </div>
             <div className="flex-1">
-              <div className="font-medium text-foreground">{userData?.name}</div>
+              <div className="font-medium text-foreground">{profile.name || '사용자'}</div>
               <div className="text-xs text-muted-foreground">{plan.displayName}</div>
             </div>
           </motion.div>

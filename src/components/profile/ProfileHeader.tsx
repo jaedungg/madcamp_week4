@@ -8,7 +8,8 @@ import {
   Mail, 
   Calendar,
   Check,
-  X
+  X,
+  User
 } from 'lucide-react';
 import { useUserStore, UserProfile } from '@/stores/userStore';
 import { useSession } from 'next-auth/react';
@@ -55,7 +56,6 @@ export default function ProfileHeader({ className }: ProfileHeaderProps) {
     };
 
     fetchUser();
-    console.log("============ profile:", profile);
 
   }, [userId, setProfile]);
 
@@ -180,7 +180,7 @@ export default function ProfileHeader({ className }: ProfileHeaderProps) {
               onClick={handleAvatarClick}
               className="relative w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 transition-colors group"
             >
-              {profile.avatar ? (
+              {/* {profile.avatar ? (
                 <img
                   src={profile.avatar}
                   alt={profile.name}
@@ -190,12 +190,15 @@ export default function ProfileHeader({ className }: ProfileHeaderProps) {
                 <div className="w-full h-full flex items-center justify-center text-white text-xl font-semibold">
                   {getInitials(profile?.name || '')}
                 </div>
-              )}
+              )} */}
+              <div className="w-full h-full flex items-center justify-center text-white text-xl font-semibold">
+                <User className="w-[50%] h-[50%] text-white" />
+              </div>
               
               {/* Overlay */}
-              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
+              {/* <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
                 <Camera className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-              </div>
+              </div> */}
             </button>
             
             {/* Camera Icon Badge */}
