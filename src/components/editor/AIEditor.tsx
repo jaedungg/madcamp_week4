@@ -89,6 +89,7 @@ export default function AIEditor({
   onPredictionError,
   onEditorReady
 }: AIEditorProps) {
+  console.log('AIEditor 렌더링:', { content: content?.substring(0, 100), contentLength: content?.length || 0 });
   // store에서 예측 설정 가져오기
   const enablePrediction = usePredictionEnabled();
   const togglePrediction = useTogglePrediction();
@@ -164,6 +165,17 @@ export default function AIEditor({
       onEditorReady(editor);
     }
   }, [editor, onEditorReady]);
+
+  // content가 변경되면 에디터 내용 업데이트
+  useEffect(() => {
+    if (editor && content !== undefined) {
+      console.log('에디터 내용 업데이트:', { content: content?.substring(0, 100), contentLength: content?.length || 0 });
+      const currentContent = editor.getHTML();
+      if (currentContent !== content) {
+        editor.commands.setContent(content);
+      }
+    }
+  }, [editor, content]);
 
   // 키보드 이벤트 처리를 위한 useEffect
   useEffect(() => {

@@ -30,7 +30,14 @@ export function transformObjectToCamelCase<T = any>(obj: any): T {
 
 // API 응답의 문서 객체를 frontend 형식으로 변환
 export function transformDocument(doc: any) {
-  return {
+  console.log('transformDocument 입력:', { 
+    id: doc.id, 
+    title: doc.title, 
+    content: doc.content,
+    contentLength: doc.content?.length || 0 
+  });
+  
+  const transformed = {
     id: doc.id,
     title: doc.title,
     content: doc.content,
@@ -46,6 +53,15 @@ export function transformDocument(doc: any) {
     userId: doc.user_id,
     aiRequestsUsed: doc.ai_requests_used || 0
   };
+  
+  console.log('transformDocument 출력:', { 
+    id: transformed.id, 
+    title: transformed.title, 
+    content: transformed.content,
+    contentLength: transformed.content?.length || 0 
+  });
+  
+  return transformed;
 }
 
 // 문서 배열 변환

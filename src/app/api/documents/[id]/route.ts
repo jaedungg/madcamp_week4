@@ -27,6 +27,7 @@ export async function GET(
     }
 
     const { id } = await params
+    console.log('문서 조회 요청:', { documentId: id, userEmail: session.user.email });
 
     // 이메일을 통해 사용자 UUID 찾기
     const user = await prisma.users.findUnique({
@@ -35,6 +36,7 @@ export async function GET(
     })
     
     if (!user) {
+      console.log('사용자를 찾을 수 없음:', session.user.email);
       return NextResponse.json(
         { success: false, error: 'User not found' },
         { status: 404 }
@@ -48,6 +50,13 @@ export async function GET(
       },
     })
 
+    console.log('조회된 문서:', { 
+      found: !!document, 
+      documentId: document?.id,
+      contentLength: document?.content?.length || 0,
+      title: document?.title 
+    });
+
     if (!document) {
       return NextResponse.json(
         { success: false, error: 'Document not found' },
@@ -57,6 +66,7 @@ export async function GET(
 
     return NextResponse.json({ success: true, document })
   } catch (err) {
+    console.error('문서 조회 오류:', err);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch document' },
       { status: 500 }
