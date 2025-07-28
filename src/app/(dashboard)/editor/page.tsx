@@ -155,6 +155,25 @@ export default function EditorPage() {
       setContent(document.content || '');
       setLastSaved(new Date(document.updatedAt || document.createdAt));
       
+      // 문서 접근 로그 기록
+      if (session?.user?.id) {
+        try {
+          await fetch(`/api/documents/${docId}/access`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              user_id: session.user.id,
+              time_spent: 0, // 로드 시점에는 0
+            }),
+          });
+        } catch (logError) {
+          console.warn('문서 접근 로그 기록 실패:', logError);
+          // 로그 실패는 사용자 경험을 방해하지 않음
+        }
+      }
+      
       console.log('문서 불러오기 완료:', document);
     } catch (error) {
       console.error('문서 불러오기 오류:', error);

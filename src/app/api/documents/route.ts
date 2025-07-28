@@ -11,7 +11,10 @@ export async function POST(req: NextRequest) {
     // 사용자 인증 확인
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Unauthorized' 
+      }, { status: 401 })
     }
 
     const raw = await req.text()
@@ -20,7 +23,10 @@ export async function POST(req: NextRequest) {
     const { title, content, category, tags } = body
 
     if (!title || !category) {
-      return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 })
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Missing required fields.' 
+      }, { status: 400 })
     }
 
     // 세션에서 사용자 ID 가져오기 (보안상 클라이언트 데이터 무시)
@@ -30,7 +36,10 @@ export async function POST(req: NextRequest) {
     })
     
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return NextResponse.json({ 
+        success: false, 
+        error: 'User not found' 
+      }, { status: 404 })
     }
 
     // excerpt와 단어 수를 정확하게 계산
@@ -49,10 +58,16 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    return NextResponse.json(document, { status: 201 })
+    return NextResponse.json({ 
+      success: true, 
+      document 
+    }, { status: 201 })
   } catch (error) {
     console.error('Error creating document:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Internal server error' 
+    }, { status: 500 })
   }
 }
 

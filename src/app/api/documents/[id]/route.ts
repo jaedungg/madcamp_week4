@@ -30,6 +30,16 @@ export async function GET(
     const { id } = await params
     console.log('문서 조회 요청:', { documentId: id, userEmail: session.user.email });
 
+    // UUID 형식 검증
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      console.log('잘못된 UUID 형식:', id);
+      return NextResponse.json(
+        { success: false, error: 'Invalid document ID format. Expected UUID format.' },
+        { status: 400 }
+      );
+    }
+
     // 이메일을 통해 사용자 UUID 찾기
     const user = await prisma.users.findUnique({
       where: { email: session.user.email },
