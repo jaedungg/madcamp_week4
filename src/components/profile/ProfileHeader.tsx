@@ -145,9 +145,11 @@ export default function ProfileHeader({ className }: ProfileHeaderProps) {
             </button>
             
             {/* Camera Icon Badge */}
-            <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary rounded-full flex items-center justify-center border-2 border-background">
-              <Camera className="w-4 h-4 text-primary-foreground" />
-            </div>
+            {isEditing && (
+              <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary rounded-full flex items-center justify-center border-2 border-background">
+                <Camera className="w-4 h-4 text-primary-foreground" />
+              </div>
+            )}
           </div>
           
           <input
@@ -165,9 +167,9 @@ export default function ProfileHeader({ className }: ProfileHeaderProps) {
             <div className="space-y-4">
               {/* Name Input */}
               <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-1">
+                {/* <label className="block text-sm font-medium text-muted-foreground mb-1">
                   이름
-                </label>
+                </label> */}
                 <input
                   type="text"
                   value={editedName}
@@ -177,8 +179,14 @@ export default function ProfileHeader({ className }: ProfileHeaderProps) {
                 />
               </div>
 
+              {/* Email */}
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Mail className="w-4 h-4" />
+                <span className="text-sm">{userData?.email || '이메일 없음'}</span>
+              </div>
+
               {/* Email Input */}
-              <div>
+              {/* <div>
                 <label className="block text-sm font-medium text-muted-foreground mb-1">
                   이메일
                 </label>
@@ -189,7 +197,7 @@ export default function ProfileHeader({ className }: ProfileHeaderProps) {
                   className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   placeholder="이메일을 입력해주세요"
                 />
-              </div>
+              </div> */}
 
               {/* Action Buttons */}
               <div className="flex gap-2">
