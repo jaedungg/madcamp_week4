@@ -12,11 +12,11 @@ import DocumentCard from '@/components/documents/DocumentCard';
 import ViewToggle from '@/components/documents/ViewToggle';
 import EmptyState from '@/components/documents/EmptyState';
 import { cn } from '@/lib/utils';
-import { 
-  fetchRecentDocumentsWithRetry, 
-  logDocumentAccess, 
+import {
+  fetchRecentDocumentsWithRetry,
+  logDocumentAccess,
   getErrorMessage,
-  isApiError 
+  isApiError
 } from '@/lib/api/documents';
 
 interface ErrorState {
@@ -28,7 +28,7 @@ interface ErrorState {
 export default function RecentDocumentsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  
+
   const {
     viewMode,
     setViewMode,
@@ -55,9 +55,9 @@ export default function RecentDocumentsPage() {
   // 인증 상태 확인
   useEffect(() => {
     setIsClient(true);
-    
+
     if (status === 'loading') return;
-    
+
     if (status === 'unauthenticated') {
       router.push('/login');
       return;
@@ -76,10 +76,10 @@ export default function RecentDocumentsPage() {
       setRecentDocuments(documents);
     } catch (err) {
       console.error('Failed to load recent documents:', err);
-      
+
       const errorMessage = getErrorMessage(err);
       const canRetry = !isApiError(err) || (isApiError(err) && err.status >= 500);
-      
+
       setError({
         hasError: true,
         message: errorMessage,
@@ -100,7 +100,7 @@ export default function RecentDocumentsPage() {
   // 시간 필터링된 문서들 (중복 제거 포함)
   const filteredRecentDocuments = useMemo(() => {
     if (!isClient) return recentDocuments;
-    
+
     // 1. 먼저 ID로 중복 제거
     const uniqueDocuments = recentDocuments.reduce((acc, current) => {
       const existingIndex = acc.findIndex(doc => doc.id === current.id);
@@ -114,7 +114,7 @@ export default function RecentDocumentsPage() {
       }
       return acc;
     }, [] as RecentDocument[]);
-    
+
     // 2. 시간 필터 적용
     return uniqueDocuments.filter(doc => {
       if (timeFilter === 'all') return true;
@@ -185,7 +185,7 @@ export default function RecentDocumentsPage() {
       }
 
       const data = await response.json();
-      
+
       if (!data.success) {
         throw new Error(data.error || '문서 생성에 실패했습니다.');
       }
@@ -193,7 +193,7 @@ export default function RecentDocumentsPage() {
       // 로컬 store도 업데이트 (선택사항)
       const newDoc = createDocument();
       incrementDocumentCount();
-      
+
       // 실제 데이터베이스의 UUID를 사용해서 에디터로 이동
       router.push(`/editor?id=${data.document.id}`);
     } catch (error) {
@@ -205,7 +205,7 @@ export default function RecentDocumentsPage() {
   const handleEditDocument = async (document: Document) => {
     // 로컬 스토어 업데이트
     markAsRecent(document.id);
-    
+
     // 데이터베이스에 접근 로그 기록
     if (session?.user?.id) {
       try {
@@ -215,7 +215,7 @@ export default function RecentDocumentsPage() {
         // 로그 실패는 사용자 경험을 방해하지 않음
       }
     }
-    
+
     router.push(`/editor?id=${document.id}`);
   };
 
@@ -244,7 +244,7 @@ export default function RecentDocumentsPage() {
 
   const formatRelativeTime = (date: Date) => {
     if (!isClient) return '로딩 중...';
-    
+
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / (1000 * 60));
@@ -260,6 +260,20 @@ export default function RecentDocumentsPage() {
       month: 'short',
       day: 'numeric'
     }).format(date);
+  };
+
+  // 문서가 수정된 것인지 단순 접근인지 판단
+  const getDocumentActivityInfo = (document: RecentDocument) => {
+    // timeSpent가 0이고 lastAccessedAt이 lastModifiedAt과 비슷하면 수정으로 간주
+    const timeDiff = Math.abs(document.lastAccessedAt.getTime() - document.lastModifiedAt.getTime());
+    const isModification = document.timeSpent === 0 && timeDiff < 60000; // 1분 이내 차이
+
+    return {
+      isModification,
+      activityType: isModification ? '수정' : '열람',
+      displayTime: isModification ? document.lastModifiedAt : document.lastAccessedAt,
+      icon: isModification ? '' : ''
+    };
   };
 
   // 로딩 상태
@@ -451,15 +465,28 @@ export default function RecentDocumentsPage() {
                         onDelete={handleDeleteDocument}
                       />
                       <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {formatRelativeTime(document.lastAccessedAt)}에 수정
-                        </span>
-                        {document.timeSpent > 0 && (
-                          <span>
-                            작업시간: {Math.round(document.timeSpent)}분
-                          </span>
-                        )}
+                        {(() => {
+                          const activityInfo = getDocumentActivityInfo(document);
+                          return (
+                            <>
+                              <span className="flex items-center gap-1">
+                                <span className="text-sm">{activityInfo.icon}</span>
+                                <Clock className="w-3 h-3" />
+                                {formatRelativeTime(activityInfo.displayTime)}에 {activityInfo.activityType}
+                              </span>
+                              {document.timeSpent > 0 && (
+                                <span>
+                                  작업시간: {Math.round(document.timeSpent)}분
+                                </span>
+                              )}
+                              {activityInfo.isModification && (
+                                <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                                  최근 수정됨
+                                </span>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
                   </motion.div>
@@ -483,11 +510,20 @@ export default function RecentDocumentsPage() {
                       onDuplicate={handleDuplicateDocument}
                       onDelete={handleDeleteDocument}
                     />
-                    {/* Recent badge */}
-                    <div className="absolute top-2 right-2 bg-primary/90 text-primary-foreground text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {formatRelativeTime(document.lastAccessedAt)}
-                    </div>
+                    {/* Recent badge with modification indicator */}
+                    {(() => {
+                      const activityInfo = getDocumentActivityInfo(document);
+                      return (
+                        <div className={`absolute top-2 right-2 text-xs px-2 py-1 rounded-full flex items-center gap-1 ${activityInfo.isModification
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-primary/90 text-primary-foreground'
+                          }`}>
+                          <span className="text-xs">{activityInfo.icon}</span>
+                          <Clock className="w-3 h-3" />
+                          {formatRelativeTime(activityInfo.displayTime)}
+                        </div>
+                      );
+                    })()}
                   </motion.div>
                 ))}
               </div>

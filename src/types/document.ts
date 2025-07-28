@@ -60,6 +60,24 @@ export interface RecentDocument extends Document {
   timeSpent: number; // minutes spent editing
 }
 
+// For document access/modification logs
+export interface DocumentAccessLog {
+  id: string;
+  documentId: string;
+  userId: string;
+  accessedAt: Date;
+  timeSpent: number;
+  accessType?: 'view' | 'edit'; // 구분을 위한 optional field
+}
+
+// For document modification tracking
+export interface DocumentModificationInfo {
+  documentId: string;
+  userId: string;
+  modifiedAt: Date;
+  modificationType: 'content' | 'title' | 'category' | 'status' | 'other';
+}
+
 // Korean category labels
 export const DOCUMENT_CATEGORY_LABELS: Record<DocumentCategory, string> = {
   email: '이메일',

@@ -217,6 +217,10 @@ export const useDocumentStore = create<DocumentState>()(
               : doc
           )
         }));
+        
+        // 문서가 업데이트된 후 자동으로 최근 문서에 추가
+        const { markAsRecent } = get();
+        markAsRecent(id);
       },
 
       deleteDocument: (id) => {

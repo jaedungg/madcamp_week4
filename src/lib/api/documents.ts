@@ -190,6 +190,54 @@ export async function fetchRecentDocuments(
 }
 
 /**
+ * 문서 수정 로그를 기록합니다 (수정을 접근으로 취급하여 최근 문서에 반영)
+ * @param documentId 문서 ID
+ * @param userId 사용자 ID
+ * @returns 성공 여부
+ */
+export async function logDocumentModification(
+  documentId: string,
+  userId: string
+): Promise<boolean> {
+  if (!documentId || !userId) {
+    throw new ApiError(400, '문서 ID와 사용자 ID가 필요합니다.');
+  }
+
+  try {
+    const requestData: LogDocumentAccessRequest = {
+      document_id: documentId,
+      user_id: userId,
+      time_spent: 0, // 수정 시에는 0으로 설정
+    };
+
+    const response = await apiRequest<LogDocumentAccessResponse>(
+      `/api/documents/${documentId}/access`,
+      {
+        method: 'POST',
+        body: JSON.stringify(requestData),
+      }
+    );
+
+    if (!response.success) {
+      throw new ApiError(500, response.error || '문서 수정 로그 저장에 실패했습니다.');
+    }
+
+    // 수정 후 캐시 무효화
+    invalidateCache(userId);
+
+    return true;
+  } catch (error) {
+    console.error('Error logging document modification:', error);
+
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    throw new ApiError(500, '문서 수정 로그 저장 중 오류가 발생했습니다.');
+  }
+}
+
+/**
  * 문서 접근 로그를 기록합니다
  * @param documentId 문서 ID
  * @param userId 사용자 ID

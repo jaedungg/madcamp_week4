@@ -158,6 +158,21 @@ export async function PUT(
       data: updateData,
     })
 
+    // 문서가 성공적으로 업데이트된 후, 접근 로그 생성 (수정을 접근으로 취급)
+    try {
+      await prisma.document_access_logs.create({
+        data: {
+          document_id: id,
+          user_id: user.id,
+          accessed_at: new Date(),
+          time_spent: 0, // 수정 시에는 0으로 설정
+        }
+      });
+    } catch (logError) {
+      // 접근 로그 생성 실패는 문서 업데이트 성공에 영향을 주지 않음
+      console.warn('Failed to create access log for document modification:', logError);
+    }
+
     return NextResponse.json({ success: true, document })
   } catch (err) {
     return NextResponse.json(
