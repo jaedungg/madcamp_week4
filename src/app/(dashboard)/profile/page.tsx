@@ -23,7 +23,7 @@ import SettingsSection, {
 } from '@/components/settings/SettingsSection';
 import Toggle from '@/components/settings/Toggle';
 import { useUserStore } from '@/stores/userStore';
-import { useSession } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 
 export default function ProfilePage() {
   const { data: session, update } = useSession();
@@ -112,28 +112,27 @@ export default function ProfilePage() {
     }
 
     try {
-      await requestAccountDeletion();
-      alert('계정 삭제 요청이 접수되었습니다. 24시간 내에 처리됩니다.');
+      const res = await fetch(`/api/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'applicaiton/json',
+        },
+      })
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || '계정 삭제 요청이 실패했습니다.');
+      } else {
+        alert(data.message || '계정이 삭제되었습니다.');
+        
+        await signOut({ callbackUrl: '/login' });
+      }
+
       setShowDeleteConfirm(false);
     } catch (error) {
-      alert('계정 삭제 요청에 실패했습니다.');
-    }
-  };
-
-  const handleTwoFactorToggle = async (enabled: boolean) => {
-    if (enabled) {
-      // 실제 구현에서는 2단계 인증 설정 프로세스
-      const confirmed = confirm('2단계 인증을 활성화하시겠습니까?\n스마트폰 앱을 통해 추가 보안 코드를 입력해야 합니다.');
-      if (confirmed) {
-        setTwoFactorEnabled(true);
-        alert('2단계 인증이 활성화되었습니다.');
-      }
-    } else {
-      const confirmed = confirm('2단계 인증을 비활성화하시겠습니까?\n계정 보안이 약해질 수 있습니다.');
-      if (confirmed) {
-        setTwoFactorEnabled(false);
-        alert('2단계 인증이 비활성화되었습니다.');
-      }
+      console.error('Error deleting account:', error);
+      alert('서버와 통신 중 오류가 발생했습니다.');
     }
   };
 
