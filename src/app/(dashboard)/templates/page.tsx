@@ -27,6 +27,8 @@ import { DocumentFilters } from '@/types/document';
 import TemplateCard from '@/components/documents/TemplateCard';
 import SearchAndFilters from '@/components/documents/SearchAndFilters';
 import EmptyState from '@/components/documents/EmptyState';
+import CreateTemplateModal from '@/components/templates/CreateTemplateModal';
+import EditTemplateModal from '@/components/templates/EditTemplateModal';
 import { cn } from '@/lib/utils';
 
 const categoryIcons: Record<TemplateCategory, React.ComponentType<{ className?: string }>> = {
@@ -60,6 +62,8 @@ export default function TemplatesPage() {
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
 
   const templates = getFilteredTemplates();
   const popularTemplates = getPopularTemplates(6);
@@ -100,7 +104,7 @@ export default function TemplatesPage() {
       }
 
       const result = await response.json();
-      
+
       if (!result.success || !result.document) {
         throw new Error('문서 생성 응답이 올바르지 않습니다.');
       }
@@ -122,6 +126,11 @@ export default function TemplatesPage() {
     } catch (error) {
       console.error('템플릿 복사 실패:', error);
     }
+  };
+
+  const handleEditTemplate = (template: Template) => {
+    setEditingTemplate(template);
+    setShowEditModal(true);
   };
 
   const handleDeleteTemplate = (template: Template) => {
@@ -200,6 +209,18 @@ export default function TemplatesPage() {
         setShowCreateModal(true);
         break;
     }
+  };
+
+  const handleCreateSuccess = (template: Template) => {
+    console.log('새 템플릿이 생성되었습니다:', template.title);
+    // 템플릿 스토어가 자동으로 업데이트됩니다
+  };
+
+  const handleEditSuccess = (template: Template) => {
+    console.log('템플릿이 수정되었습니다:', template.title);
+    setShowEditModal(false);
+    setEditingTemplate(null);
+    // 템플릿 스토어가 자동으로 업데이트됩니다
   };
 
   const categories = Object.entries(TEMPLATE_CATEGORY_LABELS).map(([key, label]) => ({
@@ -483,6 +504,7 @@ export default function TemplatesPage() {
                   <TemplateCard
                     template={template}
                     onUse={handleUseTemplate}
+                    onEdit={handleEditTemplate}
                     onDuplicate={handleDuplicateTemplate}
                     onDelete={handleDeleteTemplate}
                   />
@@ -512,6 +534,7 @@ export default function TemplatesPage() {
                   <TemplateCard
                     template={template}
                     onUse={handleUseTemplate}
+                    onEdit={handleEditTemplate}
                     onDuplicate={handleDuplicateTemplate}
                     onDelete={handleDeleteTemplate}
                   />
@@ -550,6 +573,7 @@ export default function TemplatesPage() {
                     <TemplateCard
                       template={template}
                       onUse={handleUseTemplate}
+                      onEdit={handleEditTemplate}
                       onDuplicate={handleDuplicateTemplate}
                       onDelete={handleDeleteTemplate}
                     />
@@ -590,34 +614,27 @@ export default function TemplatesPage() {
               </button>
             </div>
           </motion.div>
+
         </div>
       )}
 
-      {/* Create Template Modal Placeholder */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-card bg-white p-6 rounded-lg shadow-lg max-w-md mx-4"
-          >
-            <h3 className="text-lg font-semibold text-foreground mb-3">
-              새 템플릿 만들기
-            </h3>
-            <p className="text-muted-foreground mb-6">
-              템플릿 생성 기능은 추후 업데이트에서 제공될 예정입니다.
-            </p>
-            <div className="flex justify-end">
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="px-4 py-2 text-sm bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors"
-              >
-                확인
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+      {/* Create Template Modal */}
+      <CreateTemplateModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={handleCreateSuccess}
+      />
+
+      {/* Edit Template Modal */}
+      <EditTemplateModal
+        isOpen={showEditModal}
+        template={editingTemplate}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditingTemplate(null);
+        }}
+        onSuccess={handleEditSuccess}
+      />
     </div>
   );
 }

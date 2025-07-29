@@ -58,6 +58,16 @@ model documents {
   updated_at           DateTime?                @default(now()) @db.Timestamptz(6)
   last_modified_at     DateTime?                @default(now()) @db.Timestamptz(6)
   search_vector        Unsupported("tsvector")?
+  
+  // Template-specific fields
+  is_template          Boolean?                 @default(false)
+  difficulty           String?                  @db.VarChar(20)
+  tone                 String?                  @db.VarChar(20)
+  estimated_words      Int?
+  is_built_in          Boolean?                 @default(false)
+  usage_count          Int?                     @default(0)
+  preview              String?
+  
   document_access_logs document_access_logs[]
   document_shares      document_shares[]
   users                users                    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -68,6 +78,9 @@ model documents {
   @@index([status], map: "idx_documents_status")
   @@index([updated_at], map: "idx_documents_updated_at")
   @@index([user_id], map: "idx_documents_user_id")
+  @@index([is_template], map: "idx_documents_is_template")
+  @@index([usage_count], map: "idx_documents_usage_count")
+  @@index([is_template, category], map: "idx_documents_template_category")
 }
 
 model users {

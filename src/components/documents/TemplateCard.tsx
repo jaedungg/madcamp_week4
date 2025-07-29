@@ -21,8 +21,8 @@ import {
   TEMPLATE_DIFFICULTY_LABELS,
   TEMPLATE_TONE_LABELS
 } from '@/types/template';
-import { 
-  DocumentCategory, 
+import {
+  DocumentCategory,
   DOCUMENT_CATEGORY_LABELS,
   DOCUMENT_DIFFICULTY_LABELS,
   DOCUMENT_TONE_LABELS
@@ -323,7 +323,7 @@ export default function TemplateCard({
         템플릿 사용하기
       </motion.button>
 
-      {/* Preview on hover */}
+      {/* Preview on hover
       <div className="absolute inset-0 bg-card/95 backdrop-blur-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4 overflow-hidden">
         <div className="h-full flex flex-col">
           <div className="flex items-center justify-between mb-2">
@@ -344,7 +344,7 @@ export default function TemplateCard({
             </p>
           </div>
         </div>
-      </div>
+      </div> */}
     </motion.div>
   );
 }
