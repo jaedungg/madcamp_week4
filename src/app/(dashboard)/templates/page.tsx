@@ -66,26 +66,14 @@ export default function TemplatesPage() {
   const favoriteTemplates = getFavoriteTemplates();
   const stats = getStats();
 
-  const handleUseTemplate = (template: Template) => {
+  const handleUseTemplate = async (template: Template) => {
     try {
-      // Get template store and document store instances
+      // Track template usage
       const templateStore = useTemplateStore.getState();
-      const documentStore = useDocumentStore.getState();
-      
-      // Track template usage (avoiding ESLint hook warning by using store reference)
       templateStore.useTemplate(template.id);
-
-      // Duplicate the template document to create a new document
-      const duplicatedDoc = documentStore.duplicateDocument(template.id);
-      if (!duplicatedDoc) {
-        throw new Error('템플릿 복제에 실패했습니다.');
-      }
 
       // Increment user document count
       incrementDocumentCount();
-
-      // Mark the new document as a regular document (not a template)
-      documentStore.convertFromTemplate(duplicatedDoc.id);
 
       // Clean up the title and set as draft
       const cleanTitle = template.title
@@ -93,15 +81,33 @@ export default function TemplatesPage() {
         .replace(/\s*\(복사본\)\s*$/i, '')
         .trim() || '새 문서';
 
-      documentStore.updateDocument(duplicatedDoc.id, {
-        title: cleanTitle,
-        status: 'draft',
-        lastModifiedAt: new Date()
+      // Create document in database via API
+      const response = await fetch('/api/documents', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: cleanTitle,
+          content: template.content,
+          category: template.category,
+          tags: template.tags || [],
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error('문서 생성에 실패했습니다.');
+      }
+
+      const result = await response.json();
+      
+      if (!result.success || !result.document) {
+        throw new Error('문서 생성 응답이 올바르지 않습니다.');
+      }
 
       // Navigate to editor with the new document
       if (typeof window !== 'undefined') {
-        window.location.href = `/editor?id=${duplicatedDoc.id}`;
+        window.location.href = `/editor?id=${result.document.id}`;
       }
     } catch (error) {
       console.error('템플릿 사용 중 오류가 발생했습니다:', error);

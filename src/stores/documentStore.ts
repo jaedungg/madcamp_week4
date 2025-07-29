@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { v4 as uuidv4 } from 'uuid';
 import {
   Document,
   DocumentCategory,
@@ -169,7 +170,7 @@ const sampleDocuments: Document[] = [
 ];
 
 // Helper functions
-const generateId = () => `doc-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+const generateId = () => uuidv4();
 
 // Convert Template to Document
 const convertTemplateToDocument = (template: Template): Document => {
@@ -202,7 +203,7 @@ const convertTemplateToDocument = (template: Template): Document => {
 const builtInTemplateDocuments: Document[] = [
   // Email templates
   convertTemplateToDocument({
-    id: 'email-business-request',
+    id: '550e8400-e29b-41d4-a716-446655440001',
     title: '업무 협조 요청 이메일',
     description: '동료나 다른 부서에 업무 협조를 요청할 때 사용하는 공식적인 이메일 템플릿',
     content: `제목: [프로젝트명] 관련 업무 협조 요청
@@ -242,7 +243,7 @@ const builtInTemplateDocuments: Document[] = [
     updatedAt: new Date('2024-01-01T00:00:00Z')
   }),
   convertTemplateToDocument({
-    id: 'email-thank-you',
+    id: '550e8400-e29b-41d4-a716-446655440002',
     title: '감사 인사 이메일',
     description: '도움을 받았거나 협조해 준 상대방에게 감사를 표현하는 이메일',
     content: `제목: [사안] 관련 감사 인사
@@ -278,7 +279,7 @@ const builtInTemplateDocuments: Document[] = [
     updatedAt: new Date('2024-01-01T00:00:00Z')
   }),
   convertTemplateToDocument({
-    id: 'email-apology',
+    id: '550e8400-e29b-41d4-a716-446655440003',
     title: '사과 메시지',
     description: '실수나 문제 상황에 대해 진심으로 사과하는 이메일',
     content: `제목: [사안] 관련 사과 말씀
@@ -323,7 +324,7 @@ const builtInTemplateDocuments: Document[] = [
   }),
   // Letter templates
   convertTemplateToDocument({
-    id: 'letter-family',
+    id: '550e8400-e29b-41d4-a716-446655440004',
     title: '가족에게 보내는 편지',
     description: '멀리 있는 가족에게 안부와 근황을 전하는 따뜻한 편지',
     content: `사랑하는 [가족 호칭]께
@@ -359,7 +360,7 @@ const builtInTemplateDocuments: Document[] = [
     updatedAt: new Date('2024-01-01T00:00:00Z')
   }),
   convertTemplateToDocument({
-    id: 'letter-friend',
+    id: '550e8400-e29b-41d4-a716-446655440005',
     title: '친구에게 보내는 편지',
     description: '오랜 친구에게 추억을 되새기며 보내는 편지',
     content: `안녕, [친구 이름]!
@@ -398,7 +399,7 @@ P.S. [추신이나 특별한 메시지]`,
   }),
   // Creative writing templates
   convertTemplateToDocument({
-    id: 'creative-diary',
+    id: '550e8400-e29b-41d4-a716-446655440006',
     title: '일기 쓰기',
     description: '하루를 돌아보며 감정과 생각을 정리하는 일기',
     content: `[날짜] [요일] [날씨]
@@ -439,7 +440,7 @@ P.S. [추신이나 특별한 메시지]`,
     updatedAt: new Date('2024-01-01T00:00:00Z')
   }),
   convertTemplateToDocument({
-    id: 'business-meeting-minutes',
+    id: '550e8400-e29b-41d4-a716-446655440007',
     title: '회의록 작성',
     description: '회의 내용과 결정사항을 체계적으로 정리하는 회의록',
     content: `# [회의명] 회의록

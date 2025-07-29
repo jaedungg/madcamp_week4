@@ -19,7 +19,7 @@ export async function GET(
 ) {
   try {
     // 사용자 인증 확인
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions) as { user?: { email?: string } } | null
     if (!session?.user?.email) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
@@ -30,12 +30,14 @@ export async function GET(
     const { id } = await params
     console.log('문서 조회 요청:', { documentId: id, userEmail: session.user.email });
 
-    // UUID 형식 검증
+    // ID 형식 검증 (UUID 또는 doc-timestamp-random 형식 허용)
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(id)) {
-      console.log('잘못된 UUID 형식:', id);
+    const docIdRegex = /^doc-\d+-[a-z0-9]+$/i;
+
+    if (!uuidRegex.test(id) && !docIdRegex.test(id)) {
+      console.log('잘못된 ID 형식:', id);
       return NextResponse.json(
-        { success: false, error: 'Invalid document ID format. Expected UUID format.' },
+        { success: false, error: 'Invalid document ID format. Expected UUID or doc-timestamp-random format.' },
         { status: 400 }
       );
     }
@@ -91,7 +93,7 @@ export async function PUT(
 ) {
   try {
     // 사용자 인증 확인
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions) as { user?: { email?: string } } | null
     if (!session?.user?.email) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
@@ -190,7 +192,7 @@ export async function DELETE(
     console.log('DELETE 요청 시작');
 
     // 사용자 인증 확인
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions) as { user?: { email?: string } } | null
     console.log('세션 정보:', {
       hasSession: !!session,
       userEmail: session?.user?.email
