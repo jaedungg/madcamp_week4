@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -20,7 +20,10 @@ import {
   Briefcase,
   Users,
   GraduationCap,
-  TrendingUp
+  TrendingUp,
+  CheckCircle,
+  AlertCircle,
+  Zap
 } from 'lucide-react';
 import {
   TemplateCategory,
@@ -49,15 +52,17 @@ interface TemplateData {
   preview: string;
 }
 
-interface GeneratedTemplate extends TemplateData {
-  metadata?: {
-    prompt: string;
-    includeVariables: boolean;
-    generatedAt: string;
-  };
+interface GeneratedResult {
+  id: string;
+  title: string;
+  content: string;
+  preview: string;
+  tags: string[];
+  generatedAt: Date;
+  prompt: string;
 }
 
-type Step = 'basic' | 'generate' | 'edit' | 'preview';
+type Step = 'basic' | 'generate' | 'review' | 'edit' | 'preview';
 
 const categoryIcons: Record<TemplateCategory, React.ComponentType<{ className?: string }>> = {
   email: Mail,
@@ -68,6 +73,8 @@ const categoryIcons: Record<TemplateCategory, React.ComponentType<{ className?: 
   academic: GraduationCap,
   marketing: TrendingUp
 };
+
+const STORAGE_KEY = 'create-template-draft';
 
 export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: CreateTemplateModalProps) {
   const [currentStep, setCurrentStep] = useState<Step>('basic');
@@ -91,18 +98,127 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
   const [includeVariables, setIncludeVariables] = useState(true);
   const [examplePrompts, setExamplePrompts] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedContent, setGeneratedContent] = useState<GeneratedTemplate | null>(null);
+  const [generatedResults, setGeneratedResults] = useState<GeneratedResult[]>([]);
+  const [selectedResult, setSelectedResult] = useState<GeneratedResult | null>(null);
 
   // 태그 입력 상태
   const [tagInput, setTagInput] = useState('');
 
-  // 단계별 제목
-  const stepTitles = {
-    basic: '기본 정보',
-    generate: 'AI 도움',
-    edit: '내용 편집',
-    preview: '미리보기'
+  // 단계별 완료 상태
+  const [stepValidation, setStepValidation] = useState({
+    basic: false,
+    generate: false,
+    review: false,
+    edit: false,
+    preview: false
+  });
+
+  // 단계별 요구사항과 제목
+  const stepInfo = {
+    basic: {
+      title: '기본 정보',
+      description: '템플릿의 기본 설정을 선택해주세요',
+      required: '카테고리 선택 필수'
+    },
+    generate: {
+      title: 'AI 도움',
+      description: 'AI가 템플릿 초안을 만들어드려요',
+      required: 'AI 사용시 프롬프트 입력 필수'
+    },
+    review: {
+      title: '결과 확인',
+      description: 'AI가 생성한 템플릿을 확인하고 선택하세요',
+      required: '결과 중 하나 선택 필수'
+    },
+    edit: {
+      title: '내용 편집',
+      description: '템플릿 내용을 수정하고 완성하세요',
+      required: '제목과 내용 입력 필수'
+    },
+    preview: {
+      title: '최종 확인',
+      description: '완성된 템플릿을 최종 확인하세요',
+      required: '모든 정보 확인 완료'
+    }
   };
+
+  // 로컬 스토리지 자동저장
+  useEffect(() => {
+    if (isOpen) {
+      const savedDraft = localStorage.getItem(STORAGE_KEY);
+      if (savedDraft) {
+        try {
+          const draft = JSON.parse(savedDraft);
+          setTemplateData(draft.templateData || templateData);
+          setAiPrompt(draft.aiPrompt || '');
+          setIncludeVariables(draft.includeVariables ?? true);
+        } catch (error) {
+          console.warn('Failed to load draft:', error);
+        }
+      }
+    }
+  }, [isOpen]);
+
+  // 자동저장
+  useEffect(() => {
+    if (isOpen) {
+      const draft = {
+        templateData,
+        aiPrompt,
+        includeVariables,
+        currentStep,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+    }
+  }, [templateData, aiPrompt, includeVariables, currentStep, isOpen]);
+
+  // 키보드 네비게이션
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (currentStep === 'basic') {
+          onClose();
+        } else {
+          handlePrevious();
+        }
+      } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        if (canProceedToNext()) {
+          handleNext();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, currentStep]);
+
+  // 단계별 validation 확인
+  const validateStep = useCallback((step: Step): boolean => {
+    switch (step) {
+      case 'basic':
+        return !!templateData.category;
+      case 'generate':
+        // generate 단계는 선택사항이므로 항상 true
+        return true;
+      case 'review':
+        return !!(selectedResult || (currentStep !== 'review'));
+      case 'edit':
+        return !!(templateData.title.trim() && templateData.content.trim());
+      case 'preview':
+        return !!(templateData.title.trim() && templateData.content.trim());
+      default:
+        return false;
+    }
+  }, [templateData, selectedResult, currentStep]);
+
+  // 다음 단계로 진행 가능한지 확인
+  const canProceedToNext = useCallback((): boolean => {
+    if (currentStep === 'generate' && isGenerating) return false;
+    return validateStep(currentStep);
+  }, [currentStep, validateStep, isGenerating]);
 
   // 예시 프롬프트 로드
   useEffect(() => {
@@ -155,21 +271,82 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
         throw new Error(result.error || 'AI 생성에 실패했습니다');
       }
 
-      setGeneratedContent(result.generatedTemplate);
-      setTemplateData(prev => ({
-        ...prev,
+      const newResult: GeneratedResult = {
+        id: Date.now().toString(),
         title: result.generatedTemplate.title,
         content: result.generatedTemplate.content,
+        preview: result.generatedTemplate.preview,
         tags: result.generatedTemplate.tags,
-        preview: result.generatedTemplate.preview
-      }));
+        generatedAt: new Date(),
+        prompt: aiPrompt
+      };
 
-      setCurrentStep('edit');
+      setGeneratedResults(prev => [newResult, ...prev]);
+      setSelectedResult(newResult);
+
+      // review 단계로 자동 이동
+      setCurrentStep('review');
     } catch (error) {
       setError(error instanceof Error ? error.message : 'AI 생성에 실패했습니다');
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  // 결과 선택
+  const selectResult = (result: GeneratedResult) => {
+    setSelectedResult(result);
+    setTemplateData(prev => ({
+      ...prev,
+      title: result.title,
+      content: result.content,
+      tags: result.tags,
+      preview: result.preview
+    }));
+  };
+
+  // 다음 단계로
+  const handleNext = () => {
+    if (!canProceedToNext()) return;
+
+    const steps: Step[] = ['basic', 'generate', 'review', 'edit', 'preview'];
+    const currentIndex = steps.indexOf(currentStep);
+
+    // generate 단계에서 AI를 사용하지 않는 경우 edit으로 바로 진행
+    if (currentStep === 'generate' && generatedResults.length === 0) {
+      setCurrentStep('edit');
+      return;
+    }
+
+    if (currentIndex < steps.length - 1) {
+      setCurrentStep(steps[currentIndex + 1]);
+    }
+
+    setError('');
+  };
+
+  // 이전 단계로
+  const handlePrevious = () => {
+    const steps: Step[] = ['basic', 'generate', 'review', 'edit', 'preview'];
+    const currentIndex = steps.indexOf(currentStep);
+
+    // review 단계에서 이전으로 가면 generate로
+    if (currentStep === 'review') {
+      setCurrentStep('generate');
+      return;
+    }
+
+    if (currentIndex > 0) {
+      setCurrentStep(steps[currentIndex - 1]);
+    }
+
+    setError('');
+  };
+
+  // 직접 작성하기 (generate 단계 건너뛰기)
+  const skipToEdit = () => {
+    setCurrentStep('edit');
+    setError('');
   };
 
   // 템플릿 저장
@@ -197,6 +374,9 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
         throw new Error(result.error || '템플릿 저장에 실패했습니다');
       }
 
+      // 저장 성공시 로컬 스토리지 정리
+      localStorage.removeItem(STORAGE_KEY);
+
       onSuccess(result.template);
       resetModal();
       onClose();
@@ -222,11 +402,13 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
     });
     setAiPrompt('');
     setTagInput('');
-    setGeneratedContent(null);
+    setGeneratedResults([]);
+    setSelectedResult(null);
     setError('');
+    localStorage.removeItem(STORAGE_KEY);
   };
 
-  // 태그 추가
+  // 태그 관리
   const addTag = (tag: string) => {
     const trimmedTag = tag.trim();
     if (trimmedTag && !templateData.tags.includes(trimmedTag) && templateData.tags.length < 10) {
@@ -237,35 +419,11 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
     }
   };
 
-  // 태그 제거
   const removeTag = (tagToRemove: string) => {
     setTemplateData(prev => ({
       ...prev,
       tags: prev.tags.filter(tag => tag !== tagToRemove)
     }));
-  };
-
-  // 다음 단계로
-  const nextStep = () => {
-    const steps: Step[] = ['basic', 'generate', 'edit', 'preview'];
-    const currentIndex = steps.indexOf(currentStep);
-    if (currentIndex < steps.length - 1) {
-      setCurrentStep(steps[currentIndex + 1]);
-    }
-  };
-
-  // 이전 단계로
-  const prevStep = () => {
-    const steps: Step[] = ['basic', 'generate', 'edit', 'preview'];
-    const currentIndex = steps.indexOf(currentStep);
-    if (currentIndex > 0) {
-      setCurrentStep(steps[currentIndex - 1]);
-    }
-  };
-
-  // 단계 건너뛰기 (직접 작성)
-  const skipToEdit = () => {
-    setCurrentStep('edit');
   };
 
   if (!isOpen) return null;
@@ -276,33 +434,40 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
-        className="bg-card bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden"
+        className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden"
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center">
               <BookTemplate className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-foreground">새 템플릿 만들기</h2>
-              <p className="text-sm text-muted-foreground">{stepTitles[currentStep]}</p>
+              <h2 className="text-xl font-bold text-gray-900">새 템플릿 만들기</h2>
+              <p className="text-sm text-gray-600">
+                {stepInfo[currentStep].description}
+              </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-muted rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Progress Steps */}
-        <div className="px-6 py-4 border-b border-border">
+        <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             {(['basic', 'generate', 'edit', 'preview'] as Step[]).map((step, index) => {
               const isActive = currentStep === step;
               const isCompleted = ['basic', 'generate', 'edit', 'preview'].indexOf(currentStep) > index;
+              const isValid = validateStep(step);
+
+              // review 단계는 UI에서 숨김 (내부적으로만 사용)
+              if (step === 'review') return null;
+
               const Icon = step === 'basic' ? BookTemplate :
                 step === 'generate' ? Sparkles :
                   step === 'edit' ? PenTool : Eye;
@@ -310,22 +475,35 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
               return (
                 <div key={step} className="flex items-center">
                   <div className={cn(
-                    'flex items-center gap-2 px-3 py-2 rounded-lg transition-all',
-                    isActive ? 'bg-primary text-primary-foreground' :
-                      isCompleted ? 'bg-green-100 text-green-700' :
-                        'bg-muted text-muted-foreground'
+                    'flex items-center gap-2 px-3 py-2 rounded-lg transition-all relative',
+                    isActive
+                      ? 'bg-blue-600 text-white'
+                      : isCompleted
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-gray-100 text-gray-500'
                   )}>
                     <Icon className="w-4 h-4" />
                     <span className="text-sm font-medium hidden sm:inline">
-                      {stepTitles[step]}
+                      {stepInfo[step].title}
                     </span>
+                    {isActive && !isValid && (
+                      <AlertCircle className="w-4 h-4 text-yellow-300" />
+                    )}
+                    {isCompleted && (
+                      <CheckCircle className="w-4 h-4" />
+                    )}
                   </div>
                   {index < 3 && (
-                    <ArrowRight className="w-4 h-4 mx-2 text-muted-foreground" />
+                    <ArrowRight className="w-4 h-4 mx-2 text-gray-400" />
                   )}
                 </div>
               );
             })}
+          </div>
+
+          {/* 현재 단계 요구사항 표시 */}
+          <div className="mt-2 text-xs text-gray-500">
+            {stepInfo[currentStep].required}
           </div>
         </div>
 
@@ -346,8 +524,8 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
 
                   {/* Category Selection */}
                   <div className="mb-6">
-                    <label className="block text-sm font-medium text-foreground mb-3">
-                      카테고리
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      카테고리 *
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {Object.entries(TEMPLATE_CATEGORY_LABELS).map(([key, label]) => {
@@ -362,8 +540,8 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
                             className={cn(
                               'flex items-center gap-2 p-3 rounded-lg border transition-all',
                               isSelected
-                                ? 'border-primary bg-primary/10 text-primary'
-                                : 'border-border bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground'
+                                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                : 'border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-900'
                             )}
                           >
                             <Icon className="w-4 h-4" />
@@ -377,13 +555,13 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
                   {/* Difficulty & Tone */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         난이도
                       </label>
                       <select
                         value={templateData.difficulty}
                         onChange={(e) => setTemplateData(prev => ({ ...prev, difficulty: e.target.value as TemplateDifficulty }))}
-                        className="w-full p-3 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        className="w-full p-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         {Object.entries(TEMPLATE_DIFFICULTY_LABELS).map(([key, label]) => (
                           <option key={key} value={key}>{label}</option>
@@ -392,13 +570,13 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         톤
                       </label>
                       <select
                         value={templateData.tone}
                         onChange={(e) => setTemplateData(prev => ({ ...prev, tone: e.target.value as TemplateTone }))}
-                        className="w-full p-3 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        className="w-full p-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         {Object.entries(TEMPLATE_TONE_LABELS).map(([key, label]) => (
                           <option key={key} value={key}>{label}</option>
@@ -409,7 +587,7 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
 
                   {/* Estimated Words */}
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       예상 글자 수
                     </label>
                     <input
@@ -419,25 +597,9 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
                       step="50"
                       value={templateData.estimatedWords}
                       onChange={(e) => setTemplateData(prev => ({ ...prev, estimatedWords: parseInt(e.target.value) || 200 }))}
-                      className="w-full p-3 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full p-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
-                </div>
-
-                <div className="flex justify-between">
-                  <button
-                    onClick={skipToEdit}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    직접 작성하기
-                  </button>
-                  <button
-                    onClick={nextStep}
-                    className="flex items-center gap-2 px-6 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors"
-                  >
-                    다음
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
                 </div>
               </motion.div>
             )}
@@ -453,27 +615,27 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
               >
                 <div>
                   <h3 className="text-lg font-semibold mb-2">AI로 템플릿 생성하기</h3>
-                  <p className="text-sm text-muted-foreground mb-6">
+                  <p className="text-sm text-gray-600 mb-6">
                     원하는 템플릿의 주제나 상황을 설명해주시면 AI가 초안을 만들어드려요
                   </p>
 
                   {/* AI Prompt Input */}
                   <div className="mb-6">
-                    <label className="block text-sm font-medium text-foreground mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       어떤 템플릿을 만들고 싶으신가요?
                     </label>
                     <textarea
                       value={aiPrompt}
                       onChange={(e) => setAiPrompt(e.target.value)}
                       placeholder="예: 프로젝트 진행 상황을 보고하는 이메일"
-                      className="w-full h-24 p-3 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+                      className="w-full h-24 p-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                     />
                   </div>
 
                   {/* Example Prompts */}
                   {examplePrompts.length > 0 && (
                     <div className="mb-6">
-                      <label className="block text-sm font-medium text-foreground mb-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         <Lightbulb className="w-4 h-4 inline mr-1" />
                         예시 아이디어
                       </label>
@@ -482,7 +644,7 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
                           <button
                             key={index}
                             onClick={() => setAiPrompt(example)}
-                            className="text-left p-3 bg-muted/50 hover:bg-muted border border-border rounded-lg transition-colors text-sm"
+                            className="text-left p-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors text-sm"
                           >
                             {example}
                           </button>
@@ -498,11 +660,37 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
                         type="checkbox"
                         checked={includeVariables}
                         onChange={(e) => setIncludeVariables(e.target.checked)}
-                        className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary/30"
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                       />
-                      <span className="text-sm text-foreground">변수 포함 ([이름], [날짜] 등)</span>
+                      <span className="text-sm text-gray-700">변수 포함 ([이름], [날짜] 등)</span>
                     </label>
                   </div>
+
+                  {/* Generated Results */}
+                  {generatedResults.length > 0 && (
+                    <div className="mb-6">
+                      <h4 className="text-sm font-medium text-gray-700 mb-3">생성된 템플릿들</h4>
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {generatedResults.map((result) => (
+                          <div
+                            key={result.id}
+                            className={cn(
+                              'p-3 border rounded-lg cursor-pointer transition-colors',
+                              selectedResult?.id === result.id
+                                ? 'border-blue-500 bg-blue-50'
+                                : 'border-gray-200 hover:bg-gray-50'
+                            )}
+                            onClick={() => selectResult(result)}
+                          >
+                            <div className="font-medium text-sm">{result.title}</div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              {result.preview.substring(0, 100)}...
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {error && (
                     <div className="p-3 bg-red-50 border border-red-200 rounded-lg mb-4">
@@ -510,45 +698,81 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
                     </div>
                   )}
                 </div>
+              </motion.div>
+            )}
 
-                <div className="flex justify-between">
-                  <button
-                    onClick={prevStep}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                    이전
-                  </button>
-                  <div className="flex gap-3">
+            {/* Step 3: Review Results (AI 생성 후 결과 확인) */}
+            {currentStep === 'review' && (
+              <motion.div
+                key="review"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="p-6 space-y-6"
+              >
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">AI 생성 결과</h3>
+                  <p className="text-sm text-gray-600 mb-6">
+                    AI가 생성한 템플릿을 확인하고 다음 단계를 선택하세요
+                  </p>
+
+                  {selectedResult && (
+                    <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+                      <div className="flex items-start justify-between mb-3">
+                        <h4 className="text-lg font-semibold">{selectedResult.title}</h4>
+                        <span className="text-xs text-gray-500">
+                          {selectedResult.generatedAt.toLocaleTimeString()}
+                        </span>
+                      </div>
+                      <div className="bg-gray-50 border border-gray-200 rounded-md p-4 max-h-64 overflow-auto mb-4">
+                        <pre className="whitespace-pre-wrap text-sm text-gray-800 font-sans">
+                          {selectedResult.content}
+                        </pre>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedResult.tags.map((tag, index) => (
+                          <span
+                            key={index}
+                            className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap gap-3">
                     <button
-                      onClick={skipToEdit}
-                      className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => handleNext()}
+                      className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg transition-colors"
                     >
-                      건너뛰기
+                      <CheckCircle className="w-4 h-4" />
+                      이 내용으로 계속하기
                     </button>
                     <button
-                      onClick={generateContent}
-                      disabled={!aiPrompt.trim() || isGenerating}
-                      className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-purple-500 to-blue-600 text-white hover:from-purple-600 hover:to-blue-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => {
+                        setCurrentStep('generate');
+                        setError('');
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors"
                     >
-                      {isGenerating ? (
-                        <>
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                          생성 중...
-                        </>
-                      ) : (
-                        <>
-                          <Wand2 className="w-4 h-4" />
-                          AI로 생성하기
-                        </>
-                      )}
+                      <Wand2 className="w-4 h-4" />
+                      다시 생성하기
+                    </button>
+                    <button
+                      onClick={skipToEdit}
+                      className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white hover:bg-gray-700 rounded-lg transition-colors"
+                    >
+                      <PenTool className="w-4 h-4" />
+                      직접 작성하기
                     </button>
                   </div>
                 </div>
               </motion.div>
             )}
 
-            {/* Step 3: Edit Content */}
+            {/* Step 4: Edit Content */}
             {currentStep === 'edit' && (
               <motion.div
                 key="edit"
@@ -562,49 +786,49 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
 
                   {/* Title */}
                   <div className="mb-6">
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      제목
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      제목 *
                     </label>
                     <input
                       type="text"
                       value={templateData.title}
                       onChange={(e) => setTemplateData(prev => ({ ...prev, title: e.target.value }))}
                       placeholder="템플릿 제목을 입력하세요"
-                      className="w-full p-3 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      className="w-full p-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 
                   {/* Content */}
                   <div className="mb-6">
-                    <label className="block text-sm font-medium text-foreground mb-2">
-                      내용
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      내용 *
                     </label>
                     <textarea
                       value={templateData.content}
                       onChange={(e) => setTemplateData(prev => ({ ...prev, content: e.target.value }))}
                       placeholder="템플릿 내용을 입력하세요..."
-                      className="w-full h-64 p-3 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none font-mono text-sm"
+                      className="w-full h-64 p-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none font-mono text-sm"
                     />
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-xs text-gray-500 mt-1">
                       {templateData.content.length}자 / 예상: {templateData.estimatedWords}자
                     </p>
                   </div>
 
                   {/* Tags */}
                   <div className="mb-6">
-                    <label className="block text-sm font-medium text-foreground mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       태그
                     </label>
                     <div className="flex flex-wrap gap-2 mb-2">
                       {templateData.tags.map((tag, index) => (
                         <span
                           key={index}
-                          className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-sm"
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-sm"
                         >
                           {tag}
                           <button
                             onClick={() => removeTag(tag)}
-                            className="ml-1 hover:bg-primary/20 rounded-full p-0.5"
+                            className="ml-1 hover:bg-blue-200 rounded-full p-0.5"
                           >
                             <X className="w-3 h-3" />
                           </button>
@@ -624,14 +848,14 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
                           }
                         }}
                         placeholder="태그 입력 후 Enter"
-                        className="flex-1 p-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+                        className="flex-1 p-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                       />
                       <button
                         onClick={() => {
                           addTag(tagInput);
                           setTagInput('');
                         }}
-                        className="px-3 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors text-sm"
+                        className="px-3 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors text-sm"
                       >
                         추가
                       </button>
@@ -644,28 +868,10 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
                     </div>
                   )}
                 </div>
-
-                <div className="flex justify-between">
-                  <button
-                    onClick={prevStep}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                    이전
-                  </button>
-                  <button
-                    onClick={nextStep}
-                    disabled={!templateData.title.trim() || !templateData.content.trim()}
-                    className="flex items-center gap-2 px-6 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    미리보기
-                    <Eye className="w-4 h-4" />
-                  </button>
-                </div>
               </motion.div>
             )}
 
-            {/* Step 4: Preview */}
+            {/* Step 5: Preview */}
             {currentStep === 'preview' && (
               <motion.div
                 key="preview"
@@ -675,21 +881,21 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
                 className="p-6 space-y-6"
               >
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">템플릿 미리보기</h3>
+                  <h3 className="text-lg font-semibold mb-4">템플릿 최종 확인</h3>
 
                   {/* Template Preview Card */}
-                  <div className="bg-muted/50 border border-border rounded-lg p-6 mb-6">
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6">
                     <div className="flex items-start justify-between mb-4">
                       <div>
-                        <h4 className="text-lg font-semibold text-foreground">{templateData.title}</h4>
+                        <h4 className="text-lg font-semibold text-gray-900">{templateData.title}</h4>
                         <div className="flex items-center gap-2 mt-2">
-                          <span className="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs">
+                          <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
                             {TEMPLATE_CATEGORY_LABELS[templateData.category]}
                           </span>
-                          <span className="px-2 py-1 bg-muted text-muted-foreground rounded-full text-xs">
+                          <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded-full text-xs">
                             {TEMPLATE_DIFFICULTY_LABELS[templateData.difficulty]}
                           </span>
-                          <span className="px-2 py-1 bg-muted text-muted-foreground rounded-full text-xs">
+                          <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded-full text-xs">
                             {TEMPLATE_TONE_LABELS[templateData.tone]}
                           </span>
                         </div>
@@ -697,9 +903,9 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
                     </div>
 
                     <div className="mb-4">
-                      <p className="text-sm text-muted-foreground mb-2">내용 미리보기:</p>
-                      <div className="bg-background border border-border rounded-md p-4 max-h-64 overflow-auto">
-                        <pre className="whitespace-pre-wrap text-sm text-foreground font-sans">
+                      <p className="text-sm text-gray-600 mb-2">내용 미리보기:</p>
+                      <div className="bg-white border border-gray-200 rounded-md p-4 max-h-64 overflow-auto">
+                        <pre className="whitespace-pre-wrap text-sm text-gray-800 font-sans">
                           {templateData.content}
                         </pre>
                       </div>
@@ -707,12 +913,12 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
 
                     {templateData.tags.length > 0 && (
                       <div className="mb-4">
-                        <p className="text-sm text-muted-foreground mb-2">태그:</p>
+                        <p className="text-sm text-gray-600 mb-2">태그:</p>
                         <div className="flex flex-wrap gap-1">
                           {templateData.tags.map((tag, index) => (
                             <span
                               key={index}
-                              className="px-2 py-1 bg-accent text-accent-foreground rounded-full text-xs"
+                              className="px-2 py-1 bg-gray-200 text-gray-700 rounded-full text-xs"
                             >
                               {tag}
                             </span>
@@ -721,7 +927,7 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
                       </div>
                     )}
 
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-gray-500">
                       예상 글자 수: {templateData.estimatedWords}자 / 실제: {templateData.content.length}자
                     </div>
                   </div>
@@ -732,36 +938,91 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
                     </div>
                   )}
                 </div>
-
-                <div className="flex justify-between">
-                  <button
-                    onClick={prevStep}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                    수정하기
-                  </button>
-                  <button
-                    onClick={saveTemplate}
-                    disabled={isLoading}
-                    className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isLoading ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        저장 중...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-4 h-4" />
-                        템플릿 저장
-                      </>
-                    )}
-                  </button>
-                </div>
               </motion.div>
             )}
           </AnimatePresence>
+        </div>
+
+        {/* Footer with Navigation */}
+        <div className="flex items-center justify-between p-3 border-t border-gray-200">
+          <div className="flex items-center gap-2">
+            {currentStep !== 'basic' && (
+              <button
+                onClick={handlePrevious}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                이전
+              </button>
+            )}
+
+            {currentStep === 'generate' && (
+              <button
+                onClick={skipToEdit}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                AI 건너뛰고 직접 작성
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            {currentStep === 'generate' && (
+              <button
+                onClick={generateContent}
+                disabled={!aiPrompt.trim() || isGenerating}
+                className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-purple-500 to-blue-600 text-white hover:from-purple-600 hover:to-blue-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isGenerating ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    생성 중...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4" />
+                    AI로 생성하기
+                  </>
+                )}
+              </button>
+            )}
+
+            {currentStep === 'preview' ? (
+              <button
+                onClick={saveTemplate}
+                disabled={isLoading}
+                className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    저장 중...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    템플릿 저장
+                  </>
+                )}
+              </button>
+            ) : currentStep !== 'generate' && currentStep !== 'review' && (
+              <button
+                onClick={handleNext}
+                disabled={!canProceedToNext()}
+                className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {currentStep === 'edit' ? '미리보기' : '다음'}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Keyboard Shortcuts Help */}
+        <div className="px-6 pb-2">
+          <p className="text-xs text-gray-400">
+            단축키: Ctrl+Enter (다음), Esc ({currentStep === 'basic' ? '닫기' : '이전'})
+          </p>
         </div>
       </motion.div>
     </div>
