@@ -61,7 +61,7 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     setIsLoading(true);
-    
+
     try {
       const response = await fetch('/api/settings', {
         method: 'POST',
@@ -136,7 +136,7 @@ export default function SettingsPage() {
       <div className="flex items-center justify-between p-6 border-b border-border">
         <div>
           <h1 className="text-2xl font-bold text-foreground">설정</h1>
-          <p className="text-muted-foreground mt-1">필수 설정만 간단하게</p>
+          <p className="text-muted-foreground mt-1">필수 설정들을 간단하게</p>
         </div>
 
         <div className="flex items-center gap-3">
