@@ -25,7 +25,7 @@ import SpeechRecognitionButton from './SpeechRecognitionButton';
 import TextPredictionOverlay from './TextPredictionOverlay';
 import PredictionToggle from './PredictionToggle';
 import { useTextPrediction } from '@/hooks/useTextPrediction';
-import { usePredictionEnabled, useTogglePrediction } from '@/stores/settingsStore';
+import { usePredictionEnabled, useTogglePrediction, useEditorSettings, hydrateSettingsStore } from '@/stores/settingsStore';
 import { Editor } from '@tiptap/core';
 
 interface ToolbarButtonProps {
@@ -90,12 +90,30 @@ export default function AIEditor({
   onEditorReady
 }: AIEditorProps) {
   console.log('AIEditor 렌더링:', { content: content?.substring(0, 100), contentLength: content?.length || 0 });
-  // store에서 예측 설정 가져오기
+  // store에서 설정 가져오기
   const enablePrediction = usePredictionEnabled();
   const togglePrediction = useTogglePrediction();
+  const { autoSave } = useEditorSettings();
   const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
   const [commandPalettePosition, setCommandPalettePosition] = useState({ x: 0, y: 0 });
   const editorContainerRef = useRef<HTMLDivElement>(null);
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 자동 저장 함수
+  const handleAutoSave = useCallback((content: string) => {
+    if (!isHydrated || !autoSave || !onChange) return;
+
+    // 기존 타이머 취소
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+
+    // 2초 후 자동 저장 실행
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      onChange(content);
+    }, 2000);
+  }, [isHydrated, autoSave, onChange]);
 
   const handleSlashCommand = useCallback(() => {
     // Get current cursor position for command palette placement
@@ -148,57 +166,104 @@ export default function AIEditor({
     },
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
-      onChange?.(html);
+
+      // 하이드레이션이 완료된 후에만 자동 저장 로직 실행
+      if (isHydrated && autoSave) {
+        handleAutoSave(html);
+      } else {
+        // 자동 저장이 비활성화되어 있거나 하이드레이션 전이면 즉시 onChange 호출
+        onChange?.(html);
+      }
     },
     immediatelyRender: false,
-  }, [handleSlashCommand]);
+  }, [handleSlashCommand, isHydrated, autoSave, handleAutoSave, onChange]);
 
-  // 텍스트 예측 훅 사용
+  // 텍스트 예측 훅 사용 (하이드레이션 완료 후에만)
   const prediction = useTextPrediction(editor, {
-    enabled: enablePrediction,
+    enabled: isHydrated && enablePrediction,
     onError: onPredictionError
   });
 
   // 에디터가 준비되면 콜백 호출
   useEffect(() => {
-    if (editor && onEditorReady) {
-      onEditorReady(editor);
+    if (!editor || !onEditorReady) return;
+
+    try {
+      if (editor.view && editor.view.dom) {
+        onEditorReady(editor);
+      }
+    } catch (error) {
+      console.warn('Editor not ready for callback:', error);
     }
   }, [editor, onEditorReady]);
 
   // content가 변경되면 에디터 내용 업데이트
   useEffect(() => {
-    if (editor && content !== undefined) {
+    if (!editor || content === undefined) return;
+
+    // 에디터 view 안전성 검사
+    try {
+      if (!editor.view || !editor.view.dom) return;
+
       console.log('에디터 내용 업데이트:', { content: content?.substring(0, 100), contentLength: content?.length || 0 });
       const currentContent = editor.getHTML();
       if (currentContent !== content) {
         editor.commands.setContent(content);
       }
+    } catch (error) {
+      console.warn('Editor not ready for content update:', error);
     }
   }, [editor, content]);
 
+  // 하이드레이션 처리
+  useEffect(() => {
+    hydrateSettingsStore();
+    setIsHydrated(true);
+  }, []);
+
+  // 컴포넌트 언마운트 시 자동 저장 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // 키보드 이벤트 처리를 위한 useEffect
   useEffect(() => {
+    // 에디터가 완전히 준비되지 않았으면 early return
     if (!editor) return;
 
-    const handleKeyDown = (event: KeyboardEvent) => {
+    // view와 dom 안전성 검사
+    let editorElement: Element;
+    try {
+      if (!editor.view || !editor.view.dom) return;
+      editorElement = editor.view.dom;
+    } catch (error) {
+      console.warn('Editor view not ready in keyboard effect:', error);
+      return;
+    }
+
+    const handleKeyDown = (event: Event) => {
+      const keyboardEvent = event as KeyboardEvent;
       // Tab 키로 예측 텍스트 적용
-      if (event.key === 'Tab' && prediction.isVisible) {
-        event.preventDefault();
+      if (keyboardEvent.key === 'Tab' && prediction.isVisible) {
+        keyboardEvent.preventDefault();
         prediction.applyPrediction();
         return;
       }
 
       // Escape 키로 예측 텍스트 취소
-      if (event.key === 'Escape' && prediction.isVisible) {
-        event.preventDefault();
+      if (keyboardEvent.key === 'Escape' && prediction.isVisible) {
+        keyboardEvent.preventDefault();
         prediction.clearPrediction();
         return;
       }
 
       // 다른 키 입력 시 예측 텍스트 지우기 (방향키, 수정키는 제외)
       const preserveKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Shift', 'Control', 'Alt', 'Meta', 'Tab', 'Escape'];
-      if (!preserveKeys.includes(event.key) && prediction.isVisible) {
+      if (!preserveKeys.includes(keyboardEvent.key) && prediction.isVisible) {
         // 약간의 지연을 두어 키 입력이 처리된 후 예측 지우기
         setTimeout(() => {
           prediction.clearPrediction();
@@ -207,11 +272,21 @@ export default function AIEditor({
     };
 
     // 에디터 DOM에 키보드 이벤트 리스너 추가
-    const editorElement = editor.view.dom;
-    editorElement.addEventListener('keydown', handleKeyDown);
+    try {
+      editorElement.addEventListener('keydown', handleKeyDown as EventListener);
+    } catch (error) {
+      console.warn('Error adding keyboard event listener:', error);
+      return;
+    }
 
     return () => {
-      editorElement.removeEventListener('keydown', handleKeyDown);
+      try {
+        if (editorElement) {
+          editorElement.removeEventListener('keydown', handleKeyDown as EventListener);
+        }
+      } catch (error) {
+        console.warn('Error removing keyboard event listener:', error);
+      }
     };
   }, [editor, prediction]);
 
@@ -222,7 +297,7 @@ export default function AIEditor({
       if (event.ctrlKey && event.shiftKey && event.key === 'P') {
         event.preventDefault();
         togglePrediction();
-        
+
         // 간단한 시각적 피드백
         if ('vibrate' in navigator) {
           navigator.vibrate(50);
@@ -239,7 +314,7 @@ export default function AIEditor({
   }, [togglePrediction]);
 
   const handleCommandSelect = useCallback((_command: Command) => {
-    if (editor) {
+    if (editor && editor.view && editor.view.dom) {
       // Remove the "/" character that triggered the command
       const { from } = editor.state.selection;
       editor.chain().focus().deleteRange({ from: from - 1, to: from }).run();
@@ -248,7 +323,7 @@ export default function AIEditor({
   }, [editor]);
 
 
-  if (!editor) {
+  if (!editor || !editor.view || !editor.view.dom) {
     return (
       <div className="animate-pulse">
         <div className="h-12 bg-muted rounded-lg mb-4"></div>
@@ -428,8 +503,8 @@ export default function AIEditor({
         <div className="flex items-center gap-2">
           <span>&apos;/&apos;를 입력해 AI 명령어 사용</span>
           <span>•</span>
-          <span 
-            className="flex items-center gap-1 cursor-help" 
+          <span
+            className="flex items-center gap-1 cursor-help"
             title="Ctrl+Shift+P로 토글 가능"
           >
             <Zap className={cn(
@@ -438,8 +513,8 @@ export default function AIEditor({
             )} />
             {enablePrediction ? (
               prediction.isLoading ? '예측 중...' :
-              prediction.isVisible ? 'Tab으로 적용' :
-              'AI 예측 활성'
+                prediction.isVisible ? 'Tab으로 적용' :
+                  'AI 예측 활성'
             ) : (
               'AI 예측 비활성'
             )}

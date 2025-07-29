@@ -7,6 +7,22 @@ import type {
 } from './types';
 import { Editor } from '@tiptap/core';
 
+// 기본 톤 설정을 가져오는 함수
+function getDefaultTone(): 'formal' | 'professional' | 'friendly' | 'casual' {
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem('from-settings-storage');
+      if (stored) {
+        const settings = JSON.parse(stored);
+        return settings.state?.defaultTone || 'professional';
+      }
+    } catch {
+      // localStorage 접근 실패 시 기본값 반환
+    }
+  }
+  return 'professional';
+}
+
 // SummarizeRequest 타입 추가
 export interface SummarizeRequest {
   text: string;
@@ -27,10 +43,16 @@ export interface ExpandRequest {
  */
 export async function generateText(request: GenerateRequest): Promise<AIResponse> {
   try {
+    // 톤이 지정되지 않았으면 기본 톤 사용
+    const requestWithTone = {
+      ...request,
+      tone: request.tone || getDefaultTone()
+    };
+
     const response = await fetch('/api/ai/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request),
+      body: JSON.stringify(requestWithTone),
     });
 
     const data = await response.json();
@@ -57,10 +79,16 @@ export async function generateText(request: GenerateRequest): Promise<AIResponse
  */
 export async function improveText(request: ImproveRequest): Promise<AIResponse> {
   try {
+    // 톤이 지정되지 않았으면 기본 톤 사용
+    const requestWithTone = {
+      ...request,
+      tone: request.tone || getDefaultTone()
+    };
+
     const response = await fetch('/api/ai/improve', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request),
+      body: JSON.stringify(requestWithTone),
     });
 
     const data = await response.json();
@@ -117,10 +145,16 @@ export async function changeTone(request: ToneChangeRequest): Promise<AIResponse
  */
 export async function summarizeText(request: SummarizeRequest): Promise<AIResponse> {
   try {
+    // 톤이 지정되지 않았으면 기본 톤 사용
+    const requestWithTone = {
+      ...request,
+      tone: request.tone || getDefaultTone()
+    };
+
     const response = await fetch('/api/ai/summarize', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request),
+      body: JSON.stringify(requestWithTone),
     });
 
     const data = await response.json();
@@ -147,10 +181,16 @@ export async function summarizeText(request: SummarizeRequest): Promise<AIRespon
  */
 export async function expandText(request: ExpandRequest): Promise<AIResponse> {
   try {
+    // 톤이 지정되지 않았으면 기본 톤 사용
+    const requestWithTone = {
+      ...request,
+      tone: request.tone || getDefaultTone()
+    };
+
     const response = await fetch('/api/ai/expand', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request),
+      body: JSON.stringify(requestWithTone),
     });
 
     const data = await response.json();

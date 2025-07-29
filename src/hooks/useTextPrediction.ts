@@ -51,6 +51,14 @@ export function useTextPrediction(
    */
   const executePrediction = useCallback(async (context: PredictionContext) => {
     if (!enabled || !editor) return;
+    
+    // 에디터 view 안전성 검사
+    try {
+      if (!editor.view || !editor.view.dom) return;
+    } catch (error) {
+      console.warn('Editor view not ready in executePrediction:', error);
+      return;
+    }
 
     // 이전 요청 취소
     if (abortControllerRef.current) {
@@ -166,6 +174,14 @@ export function useTextPrediction(
    */
   const triggerPrediction = useCallback(() => {
     if (!editor || !enabled) return;
+    
+    // 에디터 view 안전성 검사
+    try {
+      if (!editor.view || !editor.view.dom) return;
+    } catch (error) {
+      console.warn('Editor view not ready in triggerPrediction:', error);
+      return;
+    }
 
     const context = extractPredictionContext(editor);
     if (!context) return;
@@ -209,6 +225,14 @@ export function useTextPrediction(
    */
   const applyPrediction = useCallback(() => {
     if (!editor || !state.prediction || !state.context) return;
+    
+    // 에디터 view 안전성 검사
+    try {
+      if (!editor.view || !editor.view.dom) return;
+    } catch (error) {
+      console.warn('Editor view not ready in applyPrediction:', error);
+      return;
+    }
 
     try {
       const { cursorPosition } = state.context;
@@ -235,20 +259,41 @@ export function useTextPrediction(
    * 에디터 내용 변화 감지
    */
   useEffect(() => {
+    // 에디터가 완전히 준비되지 않았으면 early return
     if (!editor || !enabled) return;
+    
+    // view와 dom이 준비되지 않았으면 early return
+    try {
+      if (!editor.view || !editor.view.dom) return;
+    } catch (error) {
+      // editor.view 접근 시 에러가 발생하면 에디터가 아직 준비되지 않은 상태
+      console.warn('Editor view not ready yet:', error);
+      return;
+    }
 
     const handleUpdate = () => {
-      // 약간의 지연을 두어 에디터 상태가 안정화된 후 예측 시도
-      setTimeout(() => {
-        triggerPrediction();
-      }, 10);
+      // 에디터 상태 안전성 검사
+      try {
+        if (!editor.view || !editor.view.dom) return;
+        // 약간의 지연을 두어 에디터 상태가 안정화된 후 예측 시도
+        setTimeout(() => {
+          triggerPrediction();
+        }, 10);
+      } catch (error) {
+        console.warn('Editor not ready in handleUpdate:', error);
+      }
     };
 
     const handleSelectionUpdate = () => {
-      // 선택 영역이 변경되면 예측 지우기
-      const { from, to } = editor.state.selection;
-      if (from !== to) {
-        clearPrediction();
+      try {
+        if (!editor.view || !editor.state) return;
+        // 선택 영역이 변경되면 예측 지우기
+        const { from, to } = editor.state.selection;
+        if (from !== to) {
+          clearPrediction();
+        }
+      } catch (error) {
+        console.warn('Editor not ready in handleSelectionUpdate:', error);
       }
     };
 
@@ -256,14 +301,25 @@ export function useTextPrediction(
       clearPrediction();
     };
 
-    editor.on('update', handleUpdate);
-    editor.on('selectionUpdate', handleSelectionUpdate);
-    editor.on('blur', handleBlur);
+    try {
+      editor.on('update', handleUpdate);
+      editor.on('selectionUpdate', handleSelectionUpdate);
+      editor.on('blur', handleBlur);
+    } catch (error) {
+      console.warn('Error registering editor event listeners:', error);
+      return;
+    }
 
     return () => {
-      editor.off('update', handleUpdate);
-      editor.off('selectionUpdate', handleSelectionUpdate);
-      editor.off('blur', handleBlur);
+      try {
+        if (editor && editor.off) {
+          editor.off('update', handleUpdate);
+          editor.off('selectionUpdate', handleSelectionUpdate);
+          editor.off('blur', handleBlur);
+        }
+      } catch (error) {
+        console.warn('Error removing editor event listeners:', error);
+      }
     };
   }, [editor, enabled, triggerPrediction, clearPrediction]);
 
