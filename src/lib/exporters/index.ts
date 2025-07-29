@@ -62,11 +62,15 @@ async function generateJSONFile(
       id: doc.id,
       title: doc.title,
       content: doc.content,
+      excerpt: doc.excerpt,
+      wordCount: doc.word_count,
       ...(options.includeMetadata && {
-        createdAt: doc.createdAt,
-        updatedAt: doc.updatedAt,
-        type: doc.type,
-        tags: doc.tags
+        createdAt: doc.created_at,
+        updatedAt: doc.updated_at,
+        category: doc.category,
+        tags: doc.tags,
+        status: doc.status,
+        isFavorite: doc.is_favorite
       })
     }))
   };
@@ -86,19 +90,22 @@ async function generateCSVFile(
   filePath: string,
   options: ExportOptions
 ): Promise<number> {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 
   const headers = [
     { id: 'id', title: 'ID' },
     { id: 'title', title: '제목' },
-    { id: 'content', title: '내용' }
+    { id: 'content', title: '내용' },
+    { id: 'excerpt', title: '요약' },
+    { id: 'wordCount', title: '단어 수' }
   ];
 
   if (options.includeMetadata) {
     headers.push(
-      { id: 'type', title: '유형' },
+      { id: 'category', title: '카테고리' },
       { id: 'tags', title: '태그' },
+      { id: 'status', title: '상태' },
+      { id: 'isFavorite', title: '즐겨찾기' },
       { id: 'createdAt', title: '생성일' },
       { id: 'updatedAt', title: '수정일' }
     );
@@ -113,12 +120,16 @@ async function generateCSVFile(
   const csvData = documents.map(doc => ({
     id: doc.id,
     title: doc.title,
-    content: doc.content.replace(/\n/g, ' '), // 줄바꿈 제거
+    content: (doc.content || '').replace(/\n/g, ' '),
+    excerpt: doc.excerpt || '',
+    wordCount: doc.word_count || 0,
     ...(options.includeMetadata && {
-      type: doc.type || '',
+      category: doc.category,
       tags: doc.tags?.join(', ') || '',
-      createdAt: doc.createdAt.toLocaleDateString('ko-KR'),
-      updatedAt: doc.updatedAt.toLocaleDateString('ko-KR')
+      status: doc.status || '',
+      isFavorite: doc.is_favorite ? 'Y' : 'N',
+      createdAt: doc.created_at?.toLocaleDateString('ko-KR') || '',
+      updatedAt: doc.updated_at?.toLocaleDateString('ko-KR') || ''
     })
   }));
 
@@ -270,31 +281,27 @@ function generatePDFHTML(documents: Document[], options: ExportOptions): string 
         <h1>문서 내보내기</h1>
         <div class="meta">
           내보낸 날짜: ${now.toLocaleDateString('ko-KR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })} | 총 ${documents.length}개 문서
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })} | 총 ${documents.length}개 문서
         </div>
       </div>
       
       ${documents.map((doc, index) => `
         <div class="document">
-          <div class="document-title">${index + 1}. ${doc.title || '제목 없음'}</div>
-          <div class="document-content">${doc.content.replace(/\n/g, '<br>')}</div>
+          <div class="document-title">${doc.title || '제목 없음'}</div>
+          <div class="document-content">${(doc.content || '').replace(/\n/g, '<br>')}</div>
           ${options.includeMetadata ? `
             <div class="document-meta">
               <div>
-                <span class="meta-item">
-                  <strong>유형:</strong> ${doc.type || '미분류'}
-                </span>
-                <span class="meta-item">
-                  <strong>생성일:</strong> ${new Date(doc.createdAt).toLocaleDateString('ko-KR')}
-                </span>
-                <span class="meta-item">
-                  <strong>수정일:</strong> ${new Date(doc.updatedAt).toLocaleDateString('ko-KR')}
-                </span>
+                <span class="meta-item"><strong>카테고리:</strong> ${doc.category || '-'}</span>
+                <span class="meta-item"><strong>상태:</strong> ${doc.status || '-'}</span>
+                <span class="meta-item"><strong>단어 수:</strong> ${doc.word_count ?? 0}</span>
+                <span class="meta-item"><strong>생성일:</strong> ${doc.created_at ? new Date(doc.created_at).toLocaleDateString('ko-KR') : '-'}</span>
+                <span class="meta-item"><strong>수정일:</strong> ${doc.updated_at ? new Date(doc.updated_at).toLocaleDateString('ko-KR') : '-'}</span>
               </div>
               ${doc.tags && doc.tags.length > 0 ? `
                 <div>
@@ -308,7 +315,7 @@ function generatePDFHTML(documents: Document[], options: ExportOptions): string 
       `).join('')}
       
       <div class="footer">
-        프롬(From) AI 작문 도우미 - 문서 내보내기
+        프롬 AI 작문 도우미
       </div>
     </body>
     </html>

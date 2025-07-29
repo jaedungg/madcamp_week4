@@ -256,15 +256,17 @@ export default function SearchAndFilters({
           <button
             onClick={() => toggleDropdown('category')}
             className={cn(
-              'flex items-center gap-2 px-3 py-2 text-sm bg-muted hover:bg-accent rounded-lg transition-colors',
+              'flex items-center gap-1.5 px-2 py-1.5 text-xs bg-muted hover:bg-accent rounded-md transition-colors w-full justify-between',
               templateFilters.category !== 'all' && 'bg-primary text-primary-foreground'
             )}
           >
-            카테고리
-            {templateFilters.category !== 'all' && (
-              <span className="text-xs">({TEMPLATE_CATEGORY_LABELS[templateFilters.category as TemplateCategory]})</span>
-            )}
-            <ChevronDown className="w-4 h-4" />
+            <span className="truncate">
+              카테고리
+              {templateFilters.category !== 'all' && (
+                <span className="ml-1">({TEMPLATE_CATEGORY_LABELS[templateFilters.category as TemplateCategory]})</span>
+              )}
+            </span>
+            <ChevronDown className="w-3 h-3 flex-shrink-0" />
           </button>
 
           {activeDropdown === 'category' && (
@@ -305,15 +307,17 @@ export default function SearchAndFilters({
           <button
             onClick={() => toggleDropdown('tone')}
             className={cn(
-              'flex items-center gap-2 px-3 py-2 text-sm bg-muted hover:bg-accent rounded-lg transition-colors',
+              'flex items-center gap-1.5 px-2 py-1.5 text-xs bg-muted hover:bg-accent rounded-md transition-colors w-full justify-between',
               templateFilters.tone !== 'all' && 'bg-primary text-primary-foreground'
             )}
           >
-            톤
-            {templateFilters.tone !== 'all' && (
-              <span className="text-xs">({TEMPLATE_TONE_LABELS[templateFilters.tone as TemplateTone]})</span>
-            )}
-            <ChevronDown className="w-4 h-4" />
+            <span className="truncate">
+              톤
+              {templateFilters.tone !== 'all' && (
+                <span className="ml-1">({TEMPLATE_TONE_LABELS[templateFilters.tone as TemplateTone]})</span>
+              )}
+            </span>
+            <ChevronDown className="w-3 h-3 flex-shrink-0" />
           </button>
 
           {activeDropdown === 'tone' && (
@@ -354,15 +358,17 @@ export default function SearchAndFilters({
           <button
             onClick={() => toggleDropdown('difficulty')}
             className={cn(
-              'flex items-center gap-2 px-3 py-2 text-sm bg-muted hover:bg-accent rounded-lg transition-colors',
+              'flex items-center gap-1.5 px-2 py-1.5 text-xs bg-muted hover:bg-accent rounded-md transition-colors w-full justify-between',
               templateFilters.difficulty !== 'all' && 'bg-primary text-primary-foreground'
             )}
           >
-            난이도
-            {templateFilters.difficulty !== 'all' && (
-              <span className="text-xs">({TEMPLATE_DIFFICULTY_LABELS[templateFilters.difficulty as TemplateDifficulty]})</span>
-            )}
-            <ChevronDown className="w-4 h-4" />
+            <span className="truncate">
+              난이도
+              {templateFilters.difficulty !== 'all' && (
+                <span className="ml-1">({TEMPLATE_DIFFICULTY_LABELS[templateFilters.difficulty as TemplateDifficulty]})</span>
+              )}
+            </span>
+            <ChevronDown className="w-3 h-3 flex-shrink-0" />
           </button>
 
           {activeDropdown === 'difficulty' && (
@@ -399,13 +405,13 @@ export default function SearchAndFilters({
         </div>
 
         {/* Sort By Filter */}
-        <div className="relative">
+        <div className="relative col-span-2">
           <button
             onClick={() => toggleDropdown('sortBy')}
-            className="flex items-center gap-2 px-3 py-2 text-sm bg-muted hover:bg-accent rounded-lg transition-colors"
+            className="flex items-center gap-1.5 px-2 py-1.5 text-xs bg-muted hover:bg-accent rounded-md transition-colors w-full justify-between"
           >
-            정렬
-            <ChevronDown className="w-4 h-4" />
+            <span>정렬</span>
+            <ChevronDown className="w-3 h-3 flex-shrink-0" />
           </button>
 
           {activeDropdown === 'sortBy' && (
@@ -441,28 +447,28 @@ export default function SearchAndFilters({
         <button
           onClick={() => handleFilterChange('showFavoritesOnly', !templateFilters.showFavoritesOnly)}
           className={cn(
-            'flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors',
+            'flex items-center gap-1.5 px-2 py-1.5 text-xs rounded-md transition-colors w-full justify-center',
             templateFilters.showFavoritesOnly
               ? 'bg-red-100 text-red-700 hover:bg-red-200'
               : 'bg-muted hover:bg-accent'
           )}
         >
-          <Heart className={cn('w-4 h-4', templateFilters.showFavoritesOnly && 'fill-current')} />
-          즐겨찾기만
+          <Heart className={cn('w-3 h-3', templateFilters.showFavoritesOnly && 'fill-current')} />
+          <span className="truncate">즐겨찾기만</span>
         </button>
 
         {/* Built-in Only */}
         <button
           onClick={() => handleFilterChange('showBuiltInOnly', !templateFilters.showBuiltInOnly)}
           className={cn(
-            'flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors',
+            'flex items-center gap-1.5 px-2 py-1.5 text-xs rounded-md transition-colors w-full justify-center',
             templateFilters.showBuiltInOnly
               ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
               : 'bg-muted hover:bg-accent'
           )}
         >
-          <Star className={cn('w-4 h-4', templateFilters.showBuiltInOnly && 'fill-current')} />
-          공식 템플릿만
+          <Star className={cn('w-3 h-3', templateFilters.showBuiltInOnly && 'fill-current')} />
+          <span className="truncate">공식만</span>
         </button>
       </>
     );
@@ -475,6 +481,64 @@ export default function SearchAndFilters({
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
+  // Compact mode for inline usage
+  const isCompact = className?.includes('flex items-center');
+
+  if (isCompact) {
+    return (
+      <div className="relative">
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setShowFilters(!showFilters)}
+          className={cn(
+            'flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-md transition-colors',
+            getActiveFiltersCount() > 0 || showFilters
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted hover:bg-accent'
+          )}
+        >
+          <Filter className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">필터</span>
+          {getActiveFiltersCount() > 0 && (
+            <span className="bg-background/20 text-xs px-1 py-0.5 rounded-full min-w-[1rem] text-center">
+              {getActiveFiltersCount()}
+            </span>
+          )}
+        </motion.button>
+
+        {/* Compact Filter Dropdown */}
+        {showFilters && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: -10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -10 }}
+            className="absolute bg-white top-full right-0 mt-2 w-80 bg-card border border-border rounded-lg shadow-lg z-20 p-4"
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-medium text-foreground">필터 옵션</h4>
+                {getActiveFiltersCount() > 0 && (
+                  <button
+                    onClick={onReset}
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    초기화
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {type === 'documents' ? renderDocumentFilters() : renderTemplateFilters()}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </div>
+    );
+  }
+
+  // Original full-width layout
   return (
     <div className={cn('space-y-4', className)}>
       {/* Search Bar */}

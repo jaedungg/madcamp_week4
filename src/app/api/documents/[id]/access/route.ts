@@ -20,6 +20,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ): Promise<NextResponse<AccessLogResponse>> {
   try {
+    const { id: documentId } = await params; // Await params and rename id to documentId
     // 요청 본문 파싱 및 검증
     const body: AccessLogRequest = await req.json();
     const { user_id, time_spent = 0 } = body;
@@ -34,7 +35,7 @@ export async function POST(
 
     // UUID 형식 검증
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(params.id)) {
+    if (!uuidRegex.test(documentId)) {
       return NextResponse.json(
         { success: false, error: 'Invalid document ID format' },
         { status: 400 }
@@ -53,7 +54,7 @@ export async function POST(
 
     // 문서 존재 여부 확인
     const document = await prisma.documents.findUnique({
-      where: { id: params.id },
+      where: { id: documentId },
       select: { id: true, user_id: true }, // 필요한 필드만 선택
     });
 
@@ -69,7 +70,7 @@ export async function POST(
       // 공유된 문서인지 확인
       const sharedDocument = await prisma.document_shares.findFirst({
         where: {
-          document_id: params.id,
+          document_id: documentId,
           is_active: true,
           OR: [
             { expires_at: null },
@@ -89,7 +90,7 @@ export async function POST(
     // 접근 로그 생성
     await prisma.document_access_logs.create({
       data: {
-        document_id: params.id,
+        document_id: documentId,
         user_id: user_id,
         time_spent: normalizedTimeSpent,
         accessed_at: new Date(),

@@ -14,11 +14,12 @@ import {
   User,
   Sparkles,
   Mail,
-  MessageSquare
+  MessageSquare,
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUserStore } from '@/stores/userStore';
-import { useSession } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 
 const menuItems = [
   { icon: Plus, label: '새 문서', href: '/editor', primary: true },
@@ -155,6 +156,20 @@ export default function DashboardSidebar() {
             <span className="font-medium">설정</span>
           </motion.div>
         </Link>
+
+        <div>
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            onClick={() => signOut()}
+            className={cn(
+              `w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors cursor-pointer
+              text-muted-foreground hover:text-foreground hover:bg-accent`,
+            )}
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="font-medium">로그아웃</span>
+          </motion.div>
+        </div>
 
         <Link href="/profile">
           <motion.div

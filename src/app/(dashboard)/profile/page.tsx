@@ -23,12 +23,18 @@ import SettingsSection, {
 } from '@/components/settings/SettingsSection';
 import Toggle from '@/components/settings/Toggle';
 import { useUserStore } from '@/stores/userStore';
+import { signOut, useSession } from 'next-auth/react';
 
 export default function ProfilePage() {
+  const { data: session, update } = useSession();
+  const userId = session?.user?.id;
+
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPasswords, setShowPasswords] = useState(false);
+  const [showPasswords_1, setShowPasswords_1] = useState(false);
+  const [showPasswords_2, setShowPasswords_2] = useState(false);
+  const [showPasswords_3, setShowPasswords_3] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -45,19 +51,39 @@ export default function ProfilePage() {
       alert('새 비밀번호가 일치하지 않습니다.');
       return;
     }
-
+  
     setIsChangingPassword(true);
-    
-    // 실제 구현에서는 서버 API 호출
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setIsChangingPassword(false);
-    
-    alert('비밀번호가 성공적으로 변경되었습니다.');
+  
+    try {
+      const res = await fetch(`/api/users/${userId}/password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+        }),
+      });
+  
+      const data = await res.json();
+  
+      if (!res.ok) {
+        alert(data.error || '비밀번호 변경에 실패했습니다.');
+      } else {
+        alert(data.message || '비밀번호가 성공적으로 변경되었습니다.');
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('')
+      }
+    } catch (error) {
+      console.error('Error updating password:', error);
+      alert('서버와 통신 중 오류가 발생했습니다.');
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
+  
 
   const handleExportData = async () => {
     setIsExporting(true);
@@ -86,28 +112,27 @@ export default function ProfilePage() {
     }
 
     try {
-      await requestAccountDeletion();
-      alert('계정 삭제 요청이 접수되었습니다. 24시간 내에 처리됩니다.');
+      const res = await fetch(`/api/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'applicaiton/json',
+        },
+      })
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || '계정 삭제 요청이 실패했습니다.');
+      } else {
+        alert(data.message || '계정이 삭제되었습니다.');
+        
+        await signOut({ callbackUrl: '/login' });
+      }
+
       setShowDeleteConfirm(false);
     } catch (error) {
-      alert('계정 삭제 요청에 실패했습니다.');
-    }
-  };
-
-  const handleTwoFactorToggle = async (enabled: boolean) => {
-    if (enabled) {
-      // 실제 구현에서는 2단계 인증 설정 프로세스
-      const confirmed = confirm('2단계 인증을 활성화하시겠습니까?\n스마트폰 앱을 통해 추가 보안 코드를 입력해야 합니다.');
-      if (confirmed) {
-        setTwoFactorEnabled(true);
-        alert('2단계 인증이 활성화되었습니다.');
-      }
-    } else {
-      const confirmed = confirm('2단계 인증을 비활성화하시겠습니까?\n계정 보안이 약해질 수 있습니다.');
-      if (confirmed) {
-        setTwoFactorEnabled(false);
-        alert('2단계 인증이 비활성화되었습니다.');
-      }
+      console.error('Error deleting account:', error);
+      alert('서버와 통신 중 오류가 발생했습니다.');
     }
   };
 
@@ -136,38 +161,7 @@ export default function ProfilePage() {
             {/* Left Column */}
             <div className="space-y-6">
               {/* Plan Information */}
-              <PlanCard />
-              
-              {/* Security Settings */}
-              <SettingsSection
-                title="보안 설정"
-                description="계정 보안을 강화하세요"
-              >
-                <SettingItem
-                  label="2단계 인증"
-                  description="로그인 시 추가 보안 코드로 계정을 보호합니다"
-                >
-                  <Toggle
-                    checked={twoFactorEnabled}
-                    onChange={handleTwoFactorToggle}
-                  />
-                </SettingItem>
-
-                {twoFactorEnabled && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Smartphone className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-green-800 dark:text-green-200">
-                        2단계 인증이 활성화되어 있습니다
-                      </span>
-                    </div>
-                  </motion.div>
-                )}
-              </SettingsSection>
+              <PlanCard userId={userId}/>
 
               {/* Password Change */}
               <SettingsSection
@@ -180,7 +174,7 @@ export default function ProfilePage() {
                 >
                   <div className="relative">
                     <SettingInput
-                      type={showPasswords ? "text" : "password"}
+                      type={showPasswords_1 ? "text" : "password"}
                       value={currentPassword}
                       onChange={setCurrentPassword}
                       placeholder="현재 비밀번호를 입력하세요"
@@ -188,10 +182,10 @@ export default function ProfilePage() {
                     />
                     <button
                       type="button"
-                      onClick={() => setShowPasswords(!showPasswords)}
+                      onClick={() => setShowPasswords_1(!showPasswords_1)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
-                      {showPasswords ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showPasswords_1 ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </SettingItem>
@@ -200,26 +194,44 @@ export default function ProfilePage() {
                   label="새 비밀번호"
                   direction="vertical"
                 >
-                  <SettingInput
-                    type={showPasswords ? "text" : "password"}
-                    value={newPassword}
-                    onChange={setNewPassword}
-                    placeholder="새 비밀번호를 입력하세요"
-                    className="w-full"
-                  />
+                  <div className="relative">
+                    <SettingInput
+                      type={showPasswords_2 ? "text" : "password"}
+                      value={newPassword}
+                      onChange={setNewPassword}
+                      placeholder="새 비밀번호를 입력하세요"
+                      className="w-full"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswords_2(!showPasswords_2)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPasswords_2 ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </SettingItem>
 
                 <SettingItem
                   label="비밀번호 확인"
                   direction="vertical"
                 >
-                  <SettingInput
-                    type={showPasswords ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={setConfirmPassword}
-                    placeholder="새 비밀번호를 다시 입력하세요"
-                    className="w-full"
-                  />
+                  <div className="relative">
+                    <SettingInput
+                      type={showPasswords_3 ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={setConfirmPassword}
+                      placeholder="새 비밀번호를 다시 입력하세요"
+                      className="w-full"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswords_3(!showPasswords_3)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPasswords_3 ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </SettingItem>
 
                 <div className="pt-2">
@@ -234,34 +246,6 @@ export default function ProfilePage() {
                     {isChangingPassword ? '변경 중...' : '비밀번호 변경'}
                   </SettingButton>
                 </div>
-              </SettingsSection>
-            </div>
-
-            {/* Right Column */}
-            <div className="space-y-6">
-              {/* Activity Statistics */}
-              <StatsCard />
-
-              {/* Data Management */}
-              <SettingsSection
-                title="데이터 관리"
-                description="개인 데이터를 관리하고 제어하세요"
-              >
-                <SettingItem
-                  label="내 데이터 내보내기"
-                  description="작성한 문서와 설정을 JSON 파일로 다운로드합니다"
-                  direction="vertical"
-                >
-                  <SettingButton
-                    onClick={handleExportData}
-                    variant="secondary"
-                    loading={isExporting}
-                    className="flex items-center gap-2 w-full"
-                  >
-                    <Download className="w-4 h-4" />
-                    {isExporting ? '내보내는 중...' : '데이터 내보내기'}
-                  </SettingButton>
-                </SettingItem>
               </SettingsSection>
 
               {/* Danger Zone */}
@@ -321,6 +305,36 @@ export default function ProfilePage() {
                   </div>
                 </div>
               </SettingsSection>
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-6">
+              {/* Activity Statistics */}
+              <StatsCard/>
+
+              {/* Data Management */}
+              <SettingsSection
+                title="데이터 관리"
+                description="개인 데이터를 관리하고 제어하세요"
+              >
+                <SettingItem
+                  label="내 데이터 내보내기"
+                  description="작성한 문서와 설정을 JSON 파일로 다운로드합니다"
+                  direction="vertical"
+                >
+                  <SettingButton
+                    onClick={handleExportData}
+                    variant="secondary"
+                    loading={isExporting}
+                    className="flex items-center gap-2 w-full"
+                  >
+                    <Download className="w-4 h-4" />
+                    {isExporting ? '내보내는 중...' : '데이터 내보내기'}
+                  </SettingButton>
+                </SettingItem>
+              </SettingsSection>
+
+
             </div>
 
           </div>

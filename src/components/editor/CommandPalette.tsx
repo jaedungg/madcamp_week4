@@ -471,14 +471,14 @@ export default function CommandPalette({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
         transition={{ duration: 0.15 }}
-        className="fixed z-50 w-96 bg-card border border-border rounded-lg shadow-2xl"
+        className="fixed z-50 w-96 bg-card bg-white border border-border rounded-lg shadow-2xl"
         style={{
           left: Math.min(position.x, window.innerWidth - 400),
           top: Math.min(position.y, window.innerHeight - 400),
         }}
       >
         {/* Search Input */}
-        <div className="p-4 border-b border-border">
+        <div className="p-4 border-b border-border bg-white">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input

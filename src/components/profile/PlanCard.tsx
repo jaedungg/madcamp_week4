@@ -8,20 +8,97 @@ import {
   Check,
   Zap,
   Shield,
-  Sparkles
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 import { useUserStore, getPlanColor, getUsageColor } from '@/stores/userStore';
 
-interface PlanCardProps {
-  className?: string;
+// API 응답 타입 정의 (StatsCard와 동일)
+interface WeeklyActivity {
+  date: string;
+  count: number;
 }
 
-export default function PlanCard({ className }: PlanCardProps) {
-  const { plan, stats } = useUserStore();
-  const documentsUsed = useUserStore((state) => state.stats.documentsCreated);
-  const documentsLimit = useUserStore((state) => state.plan.maxDocuments);
-  const aiRequestsUsed = useUserStore((state) => state.stats.aiRequestsThisMonth);
-  const aiRequestsLimit = useUserStore((state) => state.plan.maxAiRequestsPerMonth);
+interface AIUsageStats {
+  totalRequests: number;
+  mostUsedFeature: string;
+  costEstimate: number;
+}
+
+interface DocumentStats {
+  totalDocuments: number;
+  totalWords: number;
+  avgWordsPerDocument: number;
+  documentsByCategory: Record<string, number>;
+  documentsByStatus: Record<string, number>;
+  weeklyActivity: WeeklyActivity[];
+  aiUsageStats: AIUsageStats;
+}
+
+interface StatsResponse {
+  success: boolean;
+  stats: DocumentStats;
+  error?: string;
+}
+
+interface PlanCardProps {
+  className?: string;
+  userId?: string; // 선택적 사용자 ID
+}
+
+export default function PlanCard({ className, userId }: PlanCardProps) {
+  const { plan } = useUserStore();
+  const [stats, setStats] = React.useState<DocumentStats | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [isClient, setIsClient] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // API 데이터 가져오기
+  React.useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const url = new URL('/api/documents/stats', window.location.origin);
+        if (userId) {
+          url.searchParams.append('user_id', userId);
+        }
+
+        const response = await fetch(url.toString());
+        const data: StatsResponse = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || '통계 데이터를 가져오는데 실패했습니다.');
+        }
+
+        if (data.success) {
+          setStats(data.stats);
+        } else {
+          throw new Error(data.error || '알 수 없는 오류가 발생했습니다.');
+        }
+      } catch (err) {
+        console.error('Stats fetch error:', err);
+        setError(err instanceof Error ? err.message : '데이터를 불러오는데 실패했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isClient) {
+      fetchStats();
+    }
+  }, [isClient, userId]);
+
+  // API 데이터에서 실제 사용량 가져오기
+  const documentsUsed = stats?.totalDocuments || 0;
+  const documentsLimit = plan.maxDocuments;
+  const aiRequestsUsed = stats?.aiUsageStats.totalRequests || 0;
+  const aiRequestsLimit = plan.maxAiRequestsPerMonth;
 
   const documentsProgress = Math.min((documentsUsed / documentsLimit) * 100, 100);
   const aiRequestsProgress = Math.min((aiRequestsUsed / aiRequestsLimit) * 100, 100);
@@ -65,14 +142,18 @@ export default function PlanCard({ className }: PlanCardProps) {
           <span>{label}</span>
         </div>
         <span className="text-sm text-muted-foreground">
-          {current.toLocaleString()} / {max.toLocaleString()}
+          {loading ? (
+            <Loader2 className="w-3 h-3 animate-spin" />
+          ) : (
+            `${current.toLocaleString()} / ${max.toLocaleString()}`
+          )}
         </span>
       </div>
       
       <div className="w-full bg-muted rounded-full h-2">
         <motion.div
           initial={{ width: 0 }}
-          animate={{ width: `${percentage}%` }}
+          animate={{ width: loading ? '0%' : `${percentage}%` }}
           transition={{ duration: 0.8, ease: "easeOut" }}
           className={`h-2 rounded-full ${
             percentage >= 90 
@@ -85,7 +166,7 @@ export default function PlanCard({ className }: PlanCardProps) {
       </div>
       
       <div className="text-xs text-muted-foreground text-right">
-        {percentage.toFixed(1)}% 사용
+        {loading ? '로딩 중...' : `${percentage.toFixed(1)}% 사용`}
       </div>
     </div>
   );
@@ -107,7 +188,7 @@ export default function PlanCard({ className }: PlanCardProps) {
               <h3 className="text-xl font-bold">{plan.displayName}</h3>
               {plan.expiresAt && (
                 <p className="text-sm opacity-90">
-                  {new Date(plan.expiresAt).toLocaleDateString('ko-KR')}까지
+                  {isClient && new Date(plan.expiresAt).toLocaleDateString('ko-KR')}까지
                 </p>
               )}
             </div>
@@ -135,23 +216,33 @@ export default function PlanCard({ className }: PlanCardProps) {
             이번 달 사용량
           </h4>
           
-          <div className="space-y-4">
-            <ProgressBar
-              current={documentsUsed}
-              max={documentsLimit}
-              percentage={documentsProgress}
-              label="문서 생성"
-              icon={Sparkles}
-            />
-            
-            <ProgressBar
-              current={aiRequestsUsed}
-              max={aiRequestsLimit}
-              percentage={aiRequestsProgress}
-              label="AI 요청"
-              icon={Zap}
-            />
-          </div>
+          {error ? (
+            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                <Zap className="w-4 h-4" />
+                <span className="text-sm">사용량을 불러올 수 없습니다</span>
+              </div>
+              <p className="text-xs text-red-500 dark:text-red-300 mt-1">{error}</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <ProgressBar
+                current={documentsUsed}
+                max={documentsLimit}
+                percentage={documentsProgress}
+                label="문서 생성"
+                icon={Sparkles}
+              />
+              
+              <ProgressBar
+                current={aiRequestsUsed}
+                max={aiRequestsLimit}
+                percentage={aiRequestsProgress}
+                label="AI 요청"
+                icon={Zap}
+              />
+            </div>
+          )}
         </div>
 
         {/* Features */}
@@ -197,8 +288,8 @@ export default function PlanCard({ className }: PlanCardProps) {
           </div>
         )}
 
-        {/* Usage Warning */}
-        {(documentsProgress > 80 || aiRequestsProgress > 80) && (
+        {/* Usage Warning - API 데이터 기반 */}
+        {!loading && !error && (documentsProgress > 80 || aiRequestsProgress > 80) && (
           <div className="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
             <div className="flex items-start gap-3">
               <div className="p-1 bg-orange-100 dark:bg-orange-900/50 rounded">
@@ -208,10 +299,28 @@ export default function PlanCard({ className }: PlanCardProps) {
                 <h5 className="font-medium text-orange-800 dark:text-orange-200 mb-1">
                   사용량 한도 임박
                 </h5>
-                <p className="text-sm text-orange-700 dark:text-orange-300">
-                  이번 달 한도에 거의 도달했습니다. 플랜을 업그레이드하거나 다음 달을 기다려주세요.
+                <p className="text-sm text-orange-700 dark:text-orange-300 mb-2">
+                  이번 달 한도에 거의 도달했습니다.
                 </p>
+                <div className="text-xs text-orange-600 dark:text-orange-400">
+                  {documentsProgress > 80 && (
+                    <div>• 문서 생성: {documentsUsed}/{documentsLimit} ({documentsProgress.toFixed(1)}%)</div>
+                  )}
+                  {aiRequestsProgress > 80 && (
+                    <div>• AI 요청: {aiRequestsUsed}/{aiRequestsLimit} ({aiRequestsProgress.toFixed(1)}%)</div>
+                  )}
+                </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {loading && (
+          <div className="flex items-center justify-center py-4">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-sm">사용량 데이터를 불러오는 중...</span>
             </div>
           </div>
         )}

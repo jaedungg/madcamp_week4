@@ -12,6 +12,15 @@ export interface Document {
   lastModifiedAt: Date;
   status: DocumentStatus;
   aiRequestsUsed: number; // Track AI usage per document
+  
+  // Template-specific fields (optional for backward compatibility)
+  isTemplate?: boolean;
+  difficulty?: DocumentDifficulty;
+  tone?: DocumentTone;
+  estimatedWords?: number;
+  isBuiltIn?: boolean; // Built-in vs user-created templates
+  usageCount?: number; // How many times used as template
+  preview?: string; // Template preview text
 }
 
 export type DocumentCategory = 
@@ -27,6 +36,18 @@ export type DocumentStatus =
   | 'draft' 
   | 'completed' 
   | 'archived';
+
+export type DocumentDifficulty = 
+  | 'beginner' 
+  | 'intermediate' 
+  | 'advanced';
+
+export type DocumentTone = 
+  | 'formal' 
+  | 'professional' 
+  | 'friendly' 
+  | 'casual' 
+  | 'creative';
 
 export interface DocumentFilters {
   searchTerm: string;
@@ -93,4 +114,18 @@ export const DOCUMENT_STATUS_LABELS: Record<DocumentStatus, string> = {
   draft: '초안',
   completed: '완료',
   archived: '보관됨'
+};
+
+export const DOCUMENT_DIFFICULTY_LABELS: Record<DocumentDifficulty, string> = {
+  beginner: '초급',
+  intermediate: '중급',
+  advanced: '고급'
+};
+
+export const DOCUMENT_TONE_LABELS: Record<DocumentTone, string> = {
+  formal: '격식체',
+  professional: '전문적',
+  friendly: '친근한',
+  casual: '캐주얼',
+  creative: '창의적'
 };
