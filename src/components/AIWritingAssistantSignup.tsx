@@ -371,7 +371,7 @@ const AIWritingAssistantSignup = memo(function AIWritingAssistantSignup() {
           </BoxReveal>
           <BoxReveal boxColor="hsl(var(--primary))" duration={0.3}>
             <p className="text-muted-foreground">
-              <span className='font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent'>프롬</span><span>과 함께 글쓰기 여정을 시작하세요</span>
+              <span className='font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent'>FROM</span><span>과 함께 글쓰기 여정을 시작하세요</span>
             </p>
           </BoxReveal>
         </div>
@@ -559,7 +559,7 @@ const AIWritingAssistantSignup = memo(function AIWritingAssistantSignup() {
           <p className="text-center text-sm text-muted-foreground">
             이미 계정이 있으신가요?{' '}
             <Link href="/login" className="text-primary hover:underline font-medium">
-              로그인하기
+              로그인
             </Link>
           </p>
         </BoxReveal>

@@ -507,9 +507,9 @@ const AIWritingAssistantLogin = memo(function AIWritingAssistantLogin() {
 
           <BoxReveal boxColor="hsl(var(--primary))" duration={0.3}>
             <p className="text-center text-sm text-muted-foreground">
-              Dont have an account?{' '}
+              계정이 없으신가요?{' '}
               <Link href="/signup" className="text-primary hover:underline font-medium">
-                회원가입하기
+                회원가입
               </Link>
             </p>
           </BoxReveal>
