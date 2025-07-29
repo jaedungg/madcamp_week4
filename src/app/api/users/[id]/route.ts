@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcrypt';
 import pool from '@/lib/db';
 import { z } from 'zod';
-import { getServerSession } from 'next-auth';
 import { authOptions } from '../../auth/[...nextauth]/route';
 
 // 요청 유효성 검사 스키마
@@ -19,7 +18,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const userId = params.id;
+  const userId = (await params).id;
 
   if (!userId) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
@@ -42,7 +41,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const userId = params.id;
+    const userId = (await params).id;
     const body = await req.json();
     const parsed = updateSchema.safeParse(body);
 
@@ -57,6 +56,7 @@ export async function PUT(
 
     // 업데이트할 필드 준비
     const updates: string[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const values: any[] = [];
     let index = 1;
 
