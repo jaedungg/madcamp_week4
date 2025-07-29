@@ -37,6 +37,33 @@ export async function GET(
   return new Response(JSON.stringify(result.rows[0]), { status: 200 });
 }
 
+export async function DELETE(
+  req: NextRequest, 
+  { params }: { params: { id: string } }
+) {
+  try {
+    const userId = params.id;
+
+    if (!userId) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+    }
+
+    const result = await pool.query(
+      `DELETE FROM users WHERE id = $1 RETURNING id, name, email, profile_image`,
+      [userId]
+    );
+
+    if (result.rowCount === 0) {
+      return new Response(JSON.stringify({ error: 'User not found' }), { status: 404 });
+    }
+
+    return new Response(JSON.stringify(result.rows[0]), { status: 200 });
+  } catch (error) {
+    console.error('User deletion error:', error);
+    return new Response(JSON.stringify({ error: 'Internal Server Error' }), { status: 500 });
+  }
+}
+
 export async function PUT(
   req: NextRequest,
   { params }: { params: { id: string } }
