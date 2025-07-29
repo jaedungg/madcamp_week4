@@ -32,7 +32,9 @@ export default function ProfilePage() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPasswords, setShowPasswords] = useState(false);
+  const [showPasswords_1, setShowPasswords_1] = useState(false);
+  const [showPasswords_2, setShowPasswords_2] = useState(false);
+  const [showPasswords_3, setShowPasswords_3] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -49,19 +51,39 @@ export default function ProfilePage() {
       alert('새 비밀번호가 일치하지 않습니다.');
       return;
     }
-
+  
     setIsChangingPassword(true);
-    
-    // 실제 구현에서는 서버 API 호출
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setIsChangingPassword(false);
-    
-    alert('비밀번호가 성공적으로 변경되었습니다.');
+  
+    try {
+      const res = await fetch(`/api/users/${userId}/password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+        }),
+      });
+  
+      const data = await res.json();
+  
+      if (!res.ok) {
+        alert(data.error || '비밀번호 변경에 실패했습니다.');
+      } else {
+        alert(data.message || '비밀번호가 성공적으로 변경되었습니다.');
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('')
+      }
+    } catch (error) {
+      console.error('Error updating password:', error);
+      alert('서버와 통신 중 오류가 발생했습니다.');
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
+  
 
   const handleExportData = async () => {
     setIsExporting(true);
@@ -153,7 +175,7 @@ export default function ProfilePage() {
                 >
                   <div className="relative">
                     <SettingInput
-                      type={showPasswords ? "text" : "password"}
+                      type={showPasswords_1 ? "text" : "password"}
                       value={currentPassword}
                       onChange={setCurrentPassword}
                       placeholder="현재 비밀번호를 입력하세요"
@@ -161,10 +183,10 @@ export default function ProfilePage() {
                     />
                     <button
                       type="button"
-                      onClick={() => setShowPasswords(!showPasswords)}
+                      onClick={() => setShowPasswords_1(!showPasswords_1)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
-                      {showPasswords ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showPasswords_1 ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </SettingItem>
@@ -173,26 +195,44 @@ export default function ProfilePage() {
                   label="새 비밀번호"
                   direction="vertical"
                 >
-                  <SettingInput
-                    type={showPasswords ? "text" : "password"}
-                    value={newPassword}
-                    onChange={setNewPassword}
-                    placeholder="새 비밀번호를 입력하세요"
-                    className="w-full"
-                  />
+                  <div className="relative">
+                    <SettingInput
+                      type={showPasswords_2 ? "text" : "password"}
+                      value={newPassword}
+                      onChange={setNewPassword}
+                      placeholder="새 비밀번호를 입력하세요"
+                      className="w-full"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswords_2(!showPasswords_2)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPasswords_2 ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </SettingItem>
 
                 <SettingItem
                   label="비밀번호 확인"
                   direction="vertical"
                 >
-                  <SettingInput
-                    type={showPasswords ? "text" : "password"}
-                    value={confirmPassword}
-                    onChange={setConfirmPassword}
-                    placeholder="새 비밀번호를 다시 입력하세요"
-                    className="w-full"
-                  />
+                  <div className="relative">
+                    <SettingInput
+                      type={showPasswords_3 ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={setConfirmPassword}
+                      placeholder="새 비밀번호를 다시 입력하세요"
+                      className="w-full"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswords_3(!showPasswords_3)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPasswords_3 ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </SettingItem>
 
                 <div className="pt-2">
