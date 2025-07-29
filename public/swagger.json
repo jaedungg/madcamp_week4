@@ -878,144 +878,59 @@
       }
     },
     "/api/documents/export": {
-      "get": {
-        "summary": "문서 내보내기 API 정보 조회",
-        "tags": ["Documents Import/Export"],
-        "responses": {
-          "200": {
-            "description": "API 설명 반환",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "프롬 문서 내보내기 API"
-                    },
-                    "version": {
-                      "type": "string",
-                      "example": "1.0.0"
-                    },
-                    "methods": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "example": ["POST"]
-                    },
-                    "description": {
-                      "type": "string",
-                      "example": "사용자의 문서를 JSON, CSV, PDF 형식으로 내보냅니다."
-                    },
-                    "supportedFormats": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "example": ["json", "csv", "pdf"]
-                    },
-                    "maxFileSizes": {
-                      "type": "object",
-                      "properties": {
-                        "json": { "type": "string", "example": "10MB" },
-                        "csv": { "type": "string", "example": "5MB" },
-                        "pdf": { "type": "string", "example": "20MB" }
-                      }
-                    },
-                    "usage": {
-                      "type": "object",
-                      "properties": {
-                        "endpoint": { "type": "string", "example": "POST /api/documents/export" },
-                        "headers": {
-                          "type": "object",
-                          "properties": {
-                            "Content-Type": { "type": "string", "example": "application/json" },
-                            "Authorization": { "type": "string", "example": "Bearer <token>" }
-                          }
-                        },
-                        "body": {
-                          "type": "object",
-                          "properties": {
-                            "format": { "type": "string", "example": "json | csv | pdf" },
-                            "documentIds": { "type": "string", "example": "string[] (선택사항, 없으면 모든 문서)" },
-                            "includeContent": { "type": "string", "example": "boolean (선택사항, 기본값: true)" }
-                          }
-                        },
-                        "response": {
-                          "type": "object",
-                          "properties": {
-                            "success": { "type": "string", "example": "boolean" },
-                            "downloadUrl": { "type": "string", "example": "string (성공시)" },
-                            "error": { "type": "string", "example": "string (실패시)" },
-                            "metadata": {
-                              "type": "object",
-                              "properties": {
-                                "count": { "type": "string", "example": "number" },
-                                "format": { "type": "string", "example": "string" },
-                                "fileSize": { "type": "string", "example": "number" },
-                                "timestamp": { "type": "string", "example": "string" }
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
       "post": {
-        "summary": "문서 내보내기 실행",
+        "summary": "문서 내보내기",
         "tags": ["Documents Import/Export"],
+        "description": "사용자의 문서를 JSON, CSV 또는 PDF 형식으로 내보냅니다.",
+        "operationId": "exportDocuments",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
+                "required": ["format", "userId"],
                 "properties": {
+                  "userId": {
+                    "type": "string",
+                    "description": "문서를 조회할 사용자 ID"
+                  },
                   "format": {
                     "type": "string",
-                    "enum": ["json", "csv", "pdf"],
-                    "example": "json"
+                    "enum": ["json", "csv", "pdf"]
                   },
                   "documentIds": {
                     "type": "array",
-                    "items": { "type": "string" },
-                    "example": ["doc1", "doc2"]
+                    "items": {
+                      "type": "string"
+                    }
                   },
                   "includeContent": {
                     "type": "boolean",
-                    "default": true,
-                    "example": true
+                    "default": true
                   }
-                },
-                "required": ["format"]
+                }
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "내보내기 성공",
+            "description": "파일 생성 성공",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean", "example": true },
-                    "downloadUrl": { "type": "string", "example": "https://example.com/export/file123.json" },
+                    "success": { "type": "boolean" },
+                    "downloadUrl": { "type": "string" },
                     "metadata": {
                       "type": "object",
                       "properties": {
-                        "count": { "type": "integer", "example": 5 },
-                        "format": { "type": "string", "example": "json" },
-                        "fileSize": { "type": "integer", "example": 123456 },
-                        "timestamp": { "type": "string", "format": "date-time", "example": "2025-07-28T10:00:00Z" }
+                        "count": { "type": "integer" },
+                        "format": { "type": "string" },
+                        "fileSize": { "type": "integer" },
+                        "timestamp": { "type": "string", "format": "date-time" }
                       }
                     }
                   }
@@ -1023,44 +938,82 @@
               }
             }
           },
-          "400": {
-            "description": "요청 유효성 실패"
-          },
-          "401": {
-            "description": "인증 실패"
-          },
-          "404": {
-            "description": "문서 없음"
-          },
-          "413": {
-            "description": "파일 또는 요청 크기 초과"
-          },
-          "429": {
-            "description": "요청 제한 초과"
-          },
-          "500": {
-            "description": "서버 오류",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": { "type": "boolean", "example": false },
-                    "error": { "type": "string", "example": "파일 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요." },
-                    "metadata": {
-                      "type": "object",
-                      "properties": {
-                        "count": { "type": "integer", "example": 0 },
-                        "format": { "type": "string", "example": "unknown" },
-                        "fileSize": { "type": "integer", "example": 0 },
-                        "timestamp": { "type": "string", "format": "date-time", "example": "2025-07-28T10:00:00Z" }
-                      }
-                    }
+          "400": { "description": "잘못된 요청" },
+          "401": { "description": "인증 실패" },
+          "404": { "description": "문서를 찾을 수 없음" },
+          "413": { "description": "파일 크기 초과" },
+          "429": { "description": "요청 제한 초과" },
+          "500": { "description": "서버 오류" }
+        }
+      }
+    },
+    "/api/documents/import": {
+      "post": {
+        "summary": "문서 가져오기",
+        "tags": ["Documents Import/Export"],
+        "description": "JSON, CSV, TXT 파일에서 문서를 업로드하여 저장합니다.",
+        "operationId": "importDocuments",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file"],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "skipDuplicates": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "updateExisting": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "category": {
+                    "type": "string"
+                  },
+                  "tags": {
+                    "type": "string",
+                    "description": "쉼표로 구분된 문자열"
                   }
                 }
               }
             }
           }
+        },
+        "responses": {
+          "200": {
+            "description": "문서 가져오기 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "imported": { "type": "integer" },
+                    "skipped": { "type": "integer" },
+                    "errors": {
+                      "type": "array",
+                      "items": { "type": "string" }
+                    },
+                    "documents": {
+                      "type": "array",
+                      "items": { "type": "object" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "잘못된 요청" },
+          "401": { "description": "인증 실패" },
+          "413": { "description": "요청 크기 초과" },
+          "429": { "description": "요청 제한 초과" },
+          "500": { "description": "서버 오류" }
         }
       }
     }

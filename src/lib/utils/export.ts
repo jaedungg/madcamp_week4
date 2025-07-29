@@ -3,40 +3,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import type { Document, ExportOptions } from '../types/export';
-
-// 샘플 문서 데이터 (실제로는 데이터베이스에서 조회)
-const SAMPLE_DOCUMENTS: Document[] = [
-  {
-    id: 'doc1',
-    title: '업무 이메일 초안',
-    content: '안녕하세요. 업무 관련 문의드립니다. 프로젝트 진행 상황에 대해 논의하고 싶습니다.',
-    createdAt: new Date('2024-01-15T09:00:00Z'),
-    updatedAt: new Date('2024-01-15T10:30:00Z'),
-    userId: 'user123',
-    type: 'business-email',
-    tags: ['업무', '이메일']
-  },
-  {
-    id: 'doc2',
-    title: '감사 인사말',
-    content: '진심으로 감사드립니다. 도움을 주신 덕분에 좋은 결과를 얻을 수 있었습니다.',
-    createdAt: new Date('2024-01-16T14:20:00Z'),
-    updatedAt: new Date('2024-01-16T14:25:00Z'),
-    userId: 'user123',
-    type: 'personal-letter',
-    tags: ['감사', '인사말']
-  },
-  {
-    id: 'doc3',
-    title: '프로젝트 제안서',
-    content: '새로운 프로젝트를 제안드립니다. 해당 프로젝트는 회사의 디지털 전환을 가속화할 것입니다.',
-    createdAt: new Date('2024-01-17T11:15:00Z'),
-    updatedAt: new Date('2024-01-18T09:45:00Z'),
-    userId: 'user123',
-    type: 'business-proposal',
-    tags: ['제안서', '프로젝트']
-  }
-];
+import { prisma } from '../prisma';
 
 /**
  * 사용자별 문서 조회
@@ -45,22 +12,29 @@ export async function getDocumentsForUser(
   userId: string,
   documentIds?: string[],
   includeContent = true
-): Promise<Document[]> {
-  // 실제로는 데이터베이스 쿼리를 수행
-  let documents = SAMPLE_DOCUMENTS.filter(doc => doc.userId === userId);
+): Promise<any[]> {
+  const whereClause: any = {
+    user_id: userId
+  };
 
-  // 특정 문서 ID들만 필터링
   if (documentIds && documentIds.length > 0) {
-    documents = documents.filter(doc => documentIds.includes(doc.id));
+    whereClause.id = { in: documentIds };
   }
 
-  // 내용 제외 옵션
-  if (!includeContent) {
-    documents = documents.map(doc => ({
-      ...doc,
-      content: '' // 내용 제거
-    }));
-  }
+  const documents = await prisma.documents.findMany({
+    where: whereClause,
+    select: {
+      id: true,
+      title: true,
+      category: true,
+      tags: true,
+      status: true,
+      is_favorite: true,
+      created_at: true,
+      updated_at: true,
+      ...(includeContent ? { content: true, excerpt: true, word_count: true } : {})
+    }
+  });
 
   return documents;
 }

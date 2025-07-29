@@ -20,13 +20,17 @@ export interface ExportResponse {
 
 export interface Document {
   id: string;
-  title: string;
-  content: string;
-  createdAt: Date;
-  updatedAt: Date;
   userId: string;
-  type?: string;
-  tags?: string[];
+  title: string;
+  content: string | null;
+  excerpt: string | null;
+  word_count: number | null;
+  category: string;
+  tags: string[];
+  status: string | null;
+  is_favorite: boolean | null;
+  created_at: Date | null;
+  updated_at: Date | null;
 }
 
 export interface ExportOptions {
