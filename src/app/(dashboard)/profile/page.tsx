@@ -23,8 +23,12 @@ import SettingsSection, {
 } from '@/components/settings/SettingsSection';
 import Toggle from '@/components/settings/Toggle';
 import { useUserStore } from '@/stores/userStore';
+import { useSession } from 'next-auth/react';
 
 export default function ProfilePage() {
+  const { data: session, update } = useSession();
+  const userId = session?.user?.id;
+
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -136,38 +140,7 @@ export default function ProfilePage() {
             {/* Left Column */}
             <div className="space-y-6">
               {/* Plan Information */}
-              <PlanCard />
-              
-              {/* Security Settings */}
-              <SettingsSection
-                title="보안 설정"
-                description="계정 보안을 강화하세요"
-              >
-                <SettingItem
-                  label="2단계 인증"
-                  description="로그인 시 추가 보안 코드로 계정을 보호합니다"
-                >
-                  <Toggle
-                    checked={twoFactorEnabled}
-                    onChange={handleTwoFactorToggle}
-                  />
-                </SettingItem>
-
-                {twoFactorEnabled && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Smartphone className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-green-800 dark:text-green-200">
-                        2단계 인증이 활성화되어 있습니다
-                      </span>
-                    </div>
-                  </motion.div>
-                )}
-              </SettingsSection>
+              <PlanCard userId={userId}/>
 
               {/* Password Change */}
               <SettingsSection
@@ -235,34 +208,6 @@ export default function ProfilePage() {
                   </SettingButton>
                 </div>
               </SettingsSection>
-            </div>
-
-            {/* Right Column */}
-            <div className="space-y-6">
-              {/* Activity Statistics */}
-              <StatsCard />
-
-              {/* Data Management */}
-              <SettingsSection
-                title="데이터 관리"
-                description="개인 데이터를 관리하고 제어하세요"
-              >
-                <SettingItem
-                  label="내 데이터 내보내기"
-                  description="작성한 문서와 설정을 JSON 파일로 다운로드합니다"
-                  direction="vertical"
-                >
-                  <SettingButton
-                    onClick={handleExportData}
-                    variant="secondary"
-                    loading={isExporting}
-                    className="flex items-center gap-2 w-full"
-                  >
-                    <Download className="w-4 h-4" />
-                    {isExporting ? '내보내는 중...' : '데이터 내보내기'}
-                  </SettingButton>
-                </SettingItem>
-              </SettingsSection>
 
               {/* Danger Zone */}
               <SettingsSection
@@ -321,6 +266,36 @@ export default function ProfilePage() {
                   </div>
                 </div>
               </SettingsSection>
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-6">
+              {/* Activity Statistics */}
+              <StatsCard/>
+
+              {/* Data Management */}
+              <SettingsSection
+                title="데이터 관리"
+                description="개인 데이터를 관리하고 제어하세요"
+              >
+                <SettingItem
+                  label="내 데이터 내보내기"
+                  description="작성한 문서와 설정을 JSON 파일로 다운로드합니다"
+                  direction="vertical"
+                >
+                  <SettingButton
+                    onClick={handleExportData}
+                    variant="secondary"
+                    loading={isExporting}
+                    className="flex items-center gap-2 w-full"
+                  >
+                    <Download className="w-4 h-4" />
+                    {isExporting ? '내보내는 중...' : '데이터 내보내기'}
+                  </SettingButton>
+                </SettingItem>
+              </SettingsSection>
+
+
             </div>
 
           </div>
