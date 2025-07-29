@@ -15,9 +15,11 @@ import {
 } from '@/lib/ai/services';
 import { Editor } from '@tiptap/core';
 import { transformDocument } from '@/lib/transform';
+import { useEditor } from '@/contexts/EditorContext';
 
 export default function EditorPage() {
   const { data: session } = useSession();
+  const { setEditor } = useEditor();
   const searchParams = useSearchParams();
 
   if (session) {
@@ -426,6 +428,7 @@ export default function EditorPage() {
               placeholder="글을 작성하거나 '/'를 입력해 AI 명령어를 사용하세요..."
               onEditorReady={(editor) => {
                 editorRef.current = editor;
+                setEditor(editor);
               }}
             />
           </div>
@@ -480,33 +483,6 @@ export default function EditorPage() {
                     )}
                   </div>
                   <div className="text-sm text-muted-foreground">격식과 감정을 조절합니다</div>
-                </motion.button>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="font-semibold text-foreground mb-3">빠른 템플릿</h3>
-              <div className="space-y-2">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  onClick={() => handleTemplateSelect('business-email')}
-                  className="w-full p-2 text-left text-sm bg-muted hover:bg-accent rounded-lg transition-colors"
-                >
-                  업무용 이메일
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  onClick={() => handleTemplateSelect('thank-you')}
-                  className="w-full p-2 text-left text-sm bg-muted hover:bg-accent rounded-lg transition-colors"
-                >
-                  감사 인사말
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  onClick={() => handleTemplateSelect('apology-message')}
-                  className="w-full p-2 text-left text-sm bg-muted hover:bg-accent rounded-lg transition-colors"
-                >
-                  사과 메시지
                 </motion.button>
               </div>
             </div>

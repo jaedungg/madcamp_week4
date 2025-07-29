@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -20,6 +20,8 @@ import {
 import { cn } from '@/lib/utils';
 import { useUserStore } from '@/stores/userStore';
 import { signOut, useSession } from 'next-auth/react';
+import { insertOrReplaceText } from '@/lib/ai/services';
+import { useEditor } from '@/contexts/EditorContext';
 
 const menuItems = [
   { icon: Plus, label: '새 문서', href: '/editor', primary: true },
@@ -28,18 +30,14 @@ const menuItems = [
   { icon: BookTemplate, label: '템플릿', href: '/templates' }
 ];
 
-const templateCategories = [
-  { icon: Mail, label: '이메일', count: 12 },
-  { icon: MessageSquare, label: '편지', count: 8 },
-  { icon: PenTool, label: '창작글', count: 6 }
-];
-
 export default function DashboardSidebar() {
   const { data: session } = useSession();
-  const userId = session?.user?.id;
+  // Use email as userId fallback if id is not present
+  const userId = (session?.user as { id?: string; email?: string })?.id || session?.user?.email;
 
   const pathname = usePathname();
   const { profile, setProfile, plan } = useUserStore();
+  const { editor } = useEditor();
 
   // ✅ 유저 정보 fetch
   useEffect(() => {
@@ -66,6 +64,27 @@ export default function DashboardSidebar() {
 
     fetchUser();
   }, [userId, setProfile]);
+
+  const handleTemplateSelect = (templateType: string) => {
+    if (!editor) return;
+
+    const templates: Record<string, string> = {
+      'business-email': `<h3>제목: [메일 제목을 입력하세요]</h3><p>[받는 분 성함] 님,</p><p>안녕하세요. 평소 업무에 수고가 많으시겠습니다.</p><p>이번에 [업무 내용/요청 사항]에 대해 연락드립니다...</p><p>감사합니다.<br>[보내는 이 성명]</p>`,
+      'thank-you': `<p>[성함]님께,</p><p>지난번 [구체적인 도움 내용]에 대해 진심으로 감사드립니다.</p><p>덕분에 [결과/도움이 된 점]할 수 있었고, 정말 큰 힘이 되었습니다...</p><p>다시 한번 감사드리며,<br>[성명]</p>`,
+      'apology-message': `<p>[성함]님께,</p><p>먼저 [사건/상황]에 대해 진심으로 사과드립니다.</p><p>제가 [잘못한 점/부족했던 부분]으로 인해 불편을 끼쳐드려 죄송합니다...</p><p>앞으로는 이런 일이 없도록 더욱 신경 쓰겠습니다.<br>죄송합니다.<br><br>[성명]</p>`
+    };
+
+    const content = templates[templateType];
+    if (content) {
+      insertOrReplaceText(editor, content);
+    }
+  };
+
+  const templateCategories = [
+    { icon: Mail, label: '업무용 이메일', count: 12, onClick: () => handleTemplateSelect('business-email') },
+    { icon: MessageSquare, label: '감사 인사말', count: 8, onClick: () => handleTemplateSelect('thank-you') },
+    { icon: PenTool, label: '사과 메시지', count: 6, onClick: () => handleTemplateSelect('apology-message') }
+  ];
 
   const isActive = (path: string) => pathname === path;
 
@@ -124,15 +143,13 @@ export default function DashboardSidebar() {
                 <motion.button
                   key={category.label}
                   whileHover={{ scale: 1.02 }}
+                  onClick={category.onClick}
                   className="w-full flex items-center justify-between p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
                 >
                   <div className="flex items-center gap-2">
                     <Icon className="w-4 h-4" />
                     <span className="text-sm">{category.label}</span>
                   </div>
-                  <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
-                    {category.count}
-                  </span>
                 </motion.button>
               );
             })}
@@ -203,3 +220,4 @@ export default function DashboardSidebar() {
     </div>
   );
 }
+
