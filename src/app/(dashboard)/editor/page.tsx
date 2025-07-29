@@ -35,6 +35,7 @@ export default function EditorPage() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const editorRef = useRef<Editor | null>(null);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const savingRef = useRef<boolean>(false);
 
   const handleContentChange = (newContent: string) => {
     setContent(newContent);
@@ -56,9 +57,13 @@ export default function EditorPage() {
     }, 3000);
   };
 
-  // 자동 저장 함수 (수동 저장과 분리)
-  const handleAutoSave = async () => {
-    if (!session?.user?.email || isSaving) return;
+  // 통합 저장 함수 (자동 저장과 수동 저장이 공유)
+  const saveDocument = async (isManualSave = false) => {
+    if (!session?.user?.email || isSaving || savingRef.current) return false;
+
+    // 저장 상태를 즉시 설정하여 동시 실행 방지
+    setIsSaving(true);
+    savingRef.current = true;
 
     try {
       const saveData = {
@@ -86,20 +91,42 @@ export default function EditorPage() {
         });
       }
 
-      if (response.ok) {
-        const savedDocument = await response.json();
-
-        if (!documentId && savedDocument.id) {
-          setDocumentId(savedDocument.id);
-        }
-
-        setLastSaved(new Date());
-        console.log('자동 저장 완료:', savedDocument);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '문서 저장에 실패했습니다.');
       }
+
+      const savedDocumentResponse = await response.json();
+      const savedDocument = savedDocumentResponse.document || savedDocumentResponse;
+
+      // 새로 생성된 문서의 ID 설정
+      if (!documentId && savedDocument.id) {
+        setDocumentId(savedDocument.id);
+      }
+
+      setLastSaved(new Date());
+      console.log(`${isManualSave ? '수동' : '자동'} 저장 완료:`, savedDocument);
+
+      if (isManualSave) {
+        // 수동 저장 성공 시에만 사용자에게 알림 (선택사항)
+      }
+
+      return true;
     } catch (error) {
-      console.error('자동 저장 오류:', error);
-      // 자동 저장 실패 시 사용자에게 알리지 않음 (덜 방해되게)
+      console.error('문서 저장 오류:', error);
+      if (isManualSave) {
+        alert(error instanceof Error ? error.message : '문서 저장 중 오류가 발생했습니다.');
+      }
+      return false;
+    } finally {
+      setIsSaving(false);
+      savingRef.current = false;
     }
+  };
+
+  // 자동 저장 함수 (통합 저장 함수 사용)
+  const handleAutoSave = async () => {
+    await saveDocument(false);
   };
 
   // 시간 경과 표시 함수
@@ -156,7 +183,7 @@ export default function EditorPage() {
       setLastSaved(new Date(document.updatedAt || document.createdAt));
 
       // 문서 접근 로그 기록
-      if (session?.user?.id) {
+      if (session?.user?.email) {
         try {
           await fetch(`/api/documents/${docId}/access`, {
             method: 'POST',
@@ -164,7 +191,7 @@ export default function EditorPage() {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              user_id: session.user.id,
+              user_id: session.user.email,
               time_spent: 0, // 로드 시점에는 0
             }),
           });
@@ -173,7 +200,7 @@ export default function EditorPage() {
           // 로그 실패는 사용자 경험을 방해하지 않음
         }
       }
-
+      // 만약 id가 없으면, API에서 반환된 id를 사용 (uuid 형식이 아니어도 됨)
       console.log('문서 불러오기 완료:', document);
     } catch (error) {
       console.error('문서 불러오기 오류:', error);
@@ -190,12 +217,13 @@ export default function EditorPage() {
     }
   }, [searchParams, session]);
 
-  // 컴포넌트 언마운트 시 타이머 정리
+  // 컴포넌트 언마운트 시 타이머 및 상태 정리
   useEffect(() => {
     return () => {
       if (autoSaveTimeoutRef.current) {
         clearTimeout(autoSaveTimeoutRef.current);
       }
+      savingRef.current = false;
     };
   }, []);
 
@@ -205,52 +233,9 @@ export default function EditorPage() {
       return;
     }
 
-    setIsSaving(true);
-    try {
-      const saveData = {
-        title: documentTitle || '제목 없는 문서',
-        content: content || '',
-        category: 'draft',
-        tags: [],
-        user_id: session.user.email
-      };
-
-      let response;
-      if (documentId) {
-        // 기존 문서 업데이트
-        response = await fetch(`/api/documents/${documentId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(saveData),
-        });
-      } else {
-        // 새 문서 생성
-        response = await fetch('/api/documents', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(saveData),
-        });
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || '문서 저장에 실패했습니다.');
-      }
-
-      const savedDocument = await response.json();
-
-      if (!documentId && savedDocument.id) {
-        setDocumentId(savedDocument.id);
-      }
-
-      setLastSaved(new Date());
-      console.log('문서가 성공적으로 저장되었습니다:', savedDocument);
-
-    } catch (error) {
-      console.error('문서 저장 오류:', error);
-      alert(error instanceof Error ? error.message : '문서 저장 중 오류가 발생했습니다.');
-    } finally {
-      setIsSaving(false);
+    const success = await saveDocument(true);
+    if (success) {
+      console.log('문서가 성공적으로 저장되었습니다.');
     }
   };
 
