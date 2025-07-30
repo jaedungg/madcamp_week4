@@ -41,7 +41,6 @@ interface TemplateState {
   setFilters: (filters: Partial<TemplateFilters>) => void;
   resetFilters: () => void;
   setSearchTerm: (term: string) => void;
-  setSelectedCategory: (category: TemplateCategory | 'all') => void;
   setSortBy: (sortBy: TemplateSortBy) => void;
   
   // Selection
@@ -330,10 +329,6 @@ export const useTemplateStore = create<TemplateState>()(
         }));
       },
 
-      setSelectedCategory: (selectedCategory) => {
-        set({ selectedCategory });
-      },
-
       setSortBy: (sortBy) => {
         set((state) => ({
           filters: { ...state.filters, sortBy }
@@ -505,8 +500,7 @@ export const useTemplateStore = create<TemplateState>()(
     {
       name: 'from-template-storage',
       partialize: (state) => ({
-        filters: state.filters,
-        selectedCategory: state.selectedCategory
+        filters: state.filters
       }),
       onRehydrateStorage: () => (state) => {
         // No need to restore templates since they come from documentStore
