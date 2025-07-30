@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTemplateStore } from '@/stores/templateStore';
 import {
   X,
   Sparkles,
@@ -376,6 +377,10 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
 
       // 저장 성공시 로컬 스토리지 정리
       localStorage.removeItem(STORAGE_KEY);
+
+      // 로컬 스토어에 새 템플릿 추가
+      const templateStore = useTemplateStore.getState();
+      templateStore.addTemplateFromAPI(result.template);
 
       onSuccess(result.template);
       resetModal();

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   BookTemplate,
@@ -64,6 +64,33 @@ export default function TemplatesPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
+
+  // 페이지 로드 시 서버에서 템플릿 데이터 동기화
+  useEffect(() => {
+    const syncTemplateData = async () => {
+      setIsLoadingTemplates(true);
+      try {
+        const response = await fetch('/api/templates');
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.templates) {
+            // 서버에서 받은 템플릿 데이터를 로컬 스토어에 동기화
+            const templateStore = useTemplateStore.getState();
+            result.templates.forEach((template: any) => {
+              templateStore.addTemplateFromAPI(template);
+            });
+          }
+        }
+      } catch (error) {
+        console.error('템플릿 데이터 동기화 실패:', error);
+      } finally {
+        setIsLoadingTemplates(false);
+      }
+    };
+
+    syncTemplateData();
+  }, []);
 
   const templates = getFilteredTemplates();
   const popularTemplates = getPopularTemplates(6);

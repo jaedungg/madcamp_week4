@@ -35,6 +35,7 @@ interface TemplateState {
   duplicateTemplate: (id: string) => Template;
   toggleFavorite: (id: string) => void;
   useTemplate: (id: string) => void; // Increment usage count
+  addTemplateFromAPI: (template: any) => void; // API 응답 데이터를 로컬 스토어에 추가
   
   // Filtering and sorting
   setFilters: (filters: Partial<TemplateFilters>) => void;
@@ -180,6 +181,37 @@ export const useTemplateStore = create<TemplateState>()(
       useTemplate: (id) => {
         const documentStore = useDocumentStore.getState();
         documentStore.useTemplate(id);
+      },
+
+      addTemplateFromAPI: (apiTemplate) => {
+        const documentStore = useDocumentStore.getState();
+        
+        // API 응답 데이터를 Document 형식으로 변환
+        const templateDoc = {
+          id: apiTemplate.id,
+          title: apiTemplate.title,
+          content: apiTemplate.content || '',
+          excerpt: apiTemplate.preview || apiTemplate.description || '',
+          wordCount: apiTemplate.estimated_words || apiTemplate.estimatedWords || 0,
+          category: apiTemplate.category as DocumentCategory,
+          tags: apiTemplate.tags || [],
+          isFavorite: false,
+          createdAt: new Date(apiTemplate.created_at || apiTemplate.createdAt || Date.now()),
+          updatedAt: new Date(apiTemplate.updated_at || apiTemplate.updatedAt || Date.now()),
+          lastModifiedAt: new Date(apiTemplate.updated_at || apiTemplate.updatedAt || Date.now()),
+          status: 'completed' as const,
+          aiRequestsUsed: 0,
+          isTemplate: true,
+          difficulty: apiTemplate.difficulty as DocumentDifficulty,
+          tone: apiTemplate.tone as DocumentTone,
+          estimatedWords: apiTemplate.estimated_words || apiTemplate.estimatedWords || 0,
+          isBuiltIn: false,
+          usageCount: 0,
+          preview: apiTemplate.preview || apiTemplate.description || ''
+        };
+
+        // DocumentStore에 단일 문서로 추가
+        documentStore.importDocuments([templateDoc]);
       },
 
       // Filtering and sorting

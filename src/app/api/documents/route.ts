@@ -101,7 +101,8 @@ export async function GET(req: NextRequest) {
     }
 
     const where: Prisma.documentsWhereInput = {
-      user_id: user.id // 항상 현재 사용자의 문서만 조회
+      user_id: user.id, // 항상 현재 사용자의 문서만 조회
+      is_template: { not: true } // 템플릿 제외
     }
     if (category !== 'all') where.category = category
     if (status !== 'all') where.status = status
@@ -127,11 +128,15 @@ export async function GET(req: NextRequest) {
 
     const totalPages = Math.ceil(total / limit)
 
-    // 문서 통계 (현재 사용자의 문서만)
+    // 문서 통계 (현재 사용자의 문서만, 템플릿 제외)
+    const statsWhere = {
+      user_id: user.id,
+      is_template: { not: true }
+    }
     const stats = await prisma.documents.groupBy({
       by: ['category'],
       _count: { _all: true },
-      where,
+      where: statsWhere,
     })
 
     return NextResponse.json({
