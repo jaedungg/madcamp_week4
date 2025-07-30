@@ -44,10 +44,8 @@ const categoryIcons: Record<TemplateCategory, React.ComponentType<{ className?: 
 export default function TemplatesPage() {
   const {
     filters,
-    selectedCategory,
     setFilters,
     resetFilters,
-    setSelectedCategory,
     getFilteredTemplates,
     getTemplatesByCategory,
     getPopularTemplates,
@@ -409,10 +407,10 @@ export default function TemplatesPage() {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => setSelectedCategory('all')}
+              onClick={() => setFilters({ category: 'all' })}
               className={cn(
                 'flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-md transition-colors',
-                selectedCategory === 'all'
+                filters.category === 'all'
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted hover:bg-accent text-muted-foreground'
               )}
@@ -430,10 +428,10 @@ export default function TemplatesPage() {
                   key={category.key}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => setSelectedCategory(category.key)}
+                  onClick={() => setFilters({ category: category.key })}
                   className={cn(
                     'flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-md transition-colors',
-                    selectedCategory === category.key
+                    filters.category === category.key
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted hover:bg-accent text-muted-foreground'
                   )}
@@ -526,7 +524,7 @@ export default function TemplatesPage() {
         </div>
 
         {/* Popular Templates Section */}
-        {selectedCategory === 'all' && !filters.searchTerm && popularTemplates.length > 0 && (
+        {filters.category === 'all' && !filters.searchTerm && popularTemplates.length > 0 && (
           <div className="p-4 border-b border-border">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
@@ -556,7 +554,7 @@ export default function TemplatesPage() {
         )}
 
         {/* Favorite Templates Section */}
-        {selectedCategory === 'all' && !filters.searchTerm && favoriteTemplates.length > 0 && (
+        {filters.category === 'all' && !filters.searchTerm && favoriteTemplates.length > 0 && (
           <div className="p-4 border-b border-border">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
@@ -596,7 +594,7 @@ export default function TemplatesPage() {
             <>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-foreground">
-                  {selectedCategory === 'all' ? '모든 템플릿' : TEMPLATE_CATEGORY_LABELS[selectedCategory]}
+                  {filters.category === 'all' ? '모든 템플릿' : TEMPLATE_CATEGORY_LABELS[filters.category]}
                 </h2>
                 <div className="text-sm text-muted-foreground">
                   {templates.length}개 템플릿
