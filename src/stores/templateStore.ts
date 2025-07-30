@@ -294,7 +294,7 @@ export const useTemplateStore = create<TemplateState>()(
           difficulty: apiTemplate.difficulty,
           tone: apiTemplate.tone,
           estimatedWords: apiTemplate.estimated_words || apiTemplate.estimatedWords || 0,
-          isBuiltIn: false,
+          isBuiltIn: apiTemplate.isBuiltIn || false,
           usageCount: 0,
           preview: apiTemplate.preview || apiTemplate.description || ''
         };

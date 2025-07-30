@@ -73,7 +73,7 @@ export default function TemplatesPage() {
     const syncTemplateData = async () => {
       setIsLoadingTemplates(true);
       try {
-        const response = await fetch('/api/templates');
+        const response = await fetch('/api/templates'); // Built-in templates included by default
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.templates) {
