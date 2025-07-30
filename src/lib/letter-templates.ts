@@ -277,6 +277,7 @@ function generatePersonalLetterHTML(options: LetterExportOptions, date: string):
         }
         .date {
           text-align: right;
+          padding: 10px 0;
           margin-bottom: 30px;
           font-size: 13px;
           color: #718096;
@@ -334,7 +335,7 @@ function generatePersonalLetterHTML(options: LetterExportOptions, date: string):
         
         <div class="date">${date}</div>
         
-        ${recipient ? `<div class="recipient">${recipient}에게</div>` : ''}
+        ${title ? `<div class="recipient">${title}</div>` : ''}
         
         
         <div class="content">
@@ -344,7 +345,7 @@ function generatePersonalLetterHTML(options: LetterExportOptions, date: string):
         <div class="decorative-line"></div>
         
         <div class="closing">
-          <div class="sender-name">${sender || '당신의 친구'} 올림</div>
+          <div class="sender-name">${sender || '당신의 친구'} 드림</div>
         </div>
       </div>
     </body>
@@ -502,18 +503,18 @@ function generateInvitationLetterHTML(options: LetterExportOptions, date: string
       <style>
         body { 
           font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
-          line-height: 1.8;
+          line-height: 1.7;
           color: #2d3748;
           margin: 0;
-          padding: 40px;
+          padding: 30px;
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           font-size: 14px;
         }
         .invitation-card {
           background: white;
-          border-radius: 20px;
-          padding: 60px;
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+          border-radius: 15px;
+          padding: 50px;
+          box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
           max-width: 600px;
           margin: 0 auto;
           position: relative;
@@ -525,65 +526,65 @@ function generateInvitationLetterHTML(options: LetterExportOptions, date: string
           top: 0;
           left: 0;
           right: 0;
-          height: 10px;
+          height: 8px;
           background: linear-gradient(90deg, #667eea, #764ba2, #f093fb, #f5576c, #4facfe);
         }
         .header {
           text-align: center;
-          margin-bottom: 40px;
+          margin-bottom: 35px;
         }
         .invitation-title {
-          font-size: 28px;
+          font-size: 24px;
           color: #667eea;
           font-weight: bold;
-          margin-bottom: 10px;
+          margin-bottom: 12px;
         }
         .subtitle {
-          font-size: 16px;
+          font-size: 15px;
           color: #718096;
           font-style: italic;
         }
         .decorative-separator {
           text-align: center;
-          font-size: 20px;
+          font-size: 16px;
           color: #667eea;
-          margin: 30px 0;
+          margin: 25px 0;
         }
         .date {
           text-align: right;
-          margin-bottom: 20px;
-          font-size: 13px;
+          margin-bottom: 15px;
+          font-size: 12px;
           color: #4a5568;
         }
         .recipient {
           text-align: center;
-          font-size: 18px;
+          font-size: 17px;
           font-weight: bold;
           color: #2d3748;
-          margin-bottom: 30px;
-          padding: 15px;
+          margin-bottom: 25px;
+          padding: 12px;
           border: 2px dashed #667eea;
-          border-radius: 10px;
+          border-radius: 8px;
         }
         .content {
-          margin-bottom: 40px;
+          margin-bottom: 30px;
           text-align: center;
-          line-height: 2.0;
+          line-height: 1.8;
         }
         .content p {
-          margin-bottom: 1.5em;
+          margin-bottom: 1.4em;
         }
         .highlight-box {
           background: linear-gradient(135deg, #fef9e7, #fef9e7);
-          border-left: 5px solid #f6ad55;
-          padding: 20px;
-          margin: 25px 0;
-          border-radius: 5px;
+          border-left: 4px solid #f6ad55;
+          padding: 15px;
+          margin: 20px 0;
+          border-radius: 4px;
         }
         .signature {
           text-align: center;
-          margin-top: 40px;
-          padding-top: 30px;
+          margin-top: 35px;
+          padding-top: 25px;
           border-top: 2px solid #e2e8f0;
         }
         .signature-phrase {
@@ -593,12 +594,12 @@ function generateInvitationLetterHTML(options: LetterExportOptions, date: string
         }
         .sender-name {
           font-weight: bold;
-          font-size: 18px;
+          font-size: 17px;
           color: #667eea;
         }
         .celebration-icons {
           text-align: center;
-          font-size: 24px;
+          font-size: 20px;
           margin: 20px 0;
         }
       </style>
@@ -625,7 +626,7 @@ function generateInvitationLetterHTML(options: LetterExportOptions, date: string
         <div class="decorative-separator">❋ ❋ ❋</div>
         
         <div class="signature">
-          <div class="signature-phrase">여러분의 참석을 기다리며</div>
+          <div class="signature-phrase">당신의 참석을 기다리며</div>
           <div class="sender-name">${sender || '초대하는 이'}</div>
         </div>
         
