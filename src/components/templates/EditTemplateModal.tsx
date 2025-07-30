@@ -146,10 +146,10 @@ export default function EditTemplateModal({ isOpen, template, onClose, onSuccess
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
-        className="bg-card bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden"
+        className="bg-card bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border">
+        <div className="flex items-center justify-between p-6 border-b border-border flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
               <BookTemplate className="w-5 h-5 text-white" />
@@ -170,7 +170,7 @@ export default function EditTemplateModal({ isOpen, template, onClose, onSuccess
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6 min-h-0">
           {template.isBuiltIn ? (
             /* Read-only view for built-in templates */
             <div className="space-y-6">
@@ -407,7 +407,7 @@ export default function EditTemplateModal({ isOpen, template, onClose, onSuccess
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 p-6 border-t border-border">
+        <div className="flex justify-end gap-3 p-6 border-t border-border flex-shrink-0">
           <button
             onClick={handleClose}
             className="px-4 py-2 text-sm bg-muted hover:bg-accent rounded-lg transition-colors"
