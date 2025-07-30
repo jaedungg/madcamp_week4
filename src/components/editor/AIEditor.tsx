@@ -222,7 +222,7 @@ export default function AIEditor({
       if (event.ctrlKey && event.shiftKey && event.key === 'P') {
         event.preventDefault();
         togglePrediction();
-        
+
         // 간단한 시각적 피드백
         if ('vibrate' in navigator) {
           navigator.vibrate(50);
@@ -373,19 +373,6 @@ export default function AIEditor({
 
           {/* AI 예측 토글 버튼 */}
           <PredictionToggle />
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
-            onClick={() => {
-              // TODO: Implement AI command palette
-              console.log('AI command palette triggered');
-            }}
-          >
-            <Type className="w-4 h-4" />
-            <span className="text-sm">AI</span>
-          </motion.button>
         </div>
       </div>
 
@@ -428,8 +415,8 @@ export default function AIEditor({
         <div className="flex items-center gap-2">
           <span>&apos;/&apos;를 입력해 AI 명령어 사용</span>
           <span>•</span>
-          <span 
-            className="flex items-center gap-1 cursor-help" 
+          <span
+            className="flex items-center gap-1 cursor-help"
             title="Ctrl+Shift+P로 토글 가능"
           >
             <Zap className={cn(
@@ -438,8 +425,8 @@ export default function AIEditor({
             )} />
             {enablePrediction ? (
               prediction.isLoading ? '예측 중...' :
-              prediction.isVisible ? 'Tab으로 적용' :
-              'AI 예측 활성'
+                prediction.isVisible ? 'Tab으로 적용' :
+                  'AI 예측 활성'
             ) : (
               'AI 예측 비활성'
             )}
