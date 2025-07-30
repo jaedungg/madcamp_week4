@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   BookTemplate,
@@ -27,6 +27,8 @@ import { DocumentFilters } from '@/types/document';
 import TemplateCard from '@/components/documents/TemplateCard';
 import SearchAndFilters from '@/components/documents/SearchAndFilters';
 import EmptyState from '@/components/documents/EmptyState';
+import CreateTemplateModal from '@/components/templates/CreateTemplateModal';
+import EditTemplateModal from '@/components/templates/EditTemplateModal';
 import { cn } from '@/lib/utils';
 
 const categoryIcons: Record<TemplateCategory, React.ComponentType<{ className?: string }>> = {
@@ -42,10 +44,8 @@ const categoryIcons: Record<TemplateCategory, React.ComponentType<{ className?: 
 export default function TemplatesPage() {
   const {
     filters,
-    selectedCategory,
     setFilters,
     resetFilters,
-    setSelectedCategory,
     getFilteredTemplates,
     getTemplatesByCategory,
     getPopularTemplates,
@@ -60,32 +60,51 @@ export default function TemplatesPage() {
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string>('');
+
+  // 페이지 로드 시 서버에서 템플릿 데이터 동기화
+  useEffect(() => {
+    const syncTemplateData = async () => {
+      setIsLoadingTemplates(true);
+      try {
+        const response = await fetch('/api/templates'); // Built-in templates included by default
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.templates) {
+            // 서버에서 받은 템플릿 데이터를 로컬 스토어에 동기화
+            const templateStore = useTemplateStore.getState();
+            result.templates.forEach((template: unknown) => {
+              templateStore.addTemplateFromAPI(template);
+            });
+          }
+        }
+      } catch (error) {
+        console.error('템플릿 데이터 동기화 실패:', error);
+      } finally {
+        setIsLoadingTemplates(false);
+      }
+    };
+
+    syncTemplateData();
+  }, []);
 
   const templates = getFilteredTemplates();
   const popularTemplates = getPopularTemplates(6);
   const favoriteTemplates = getFavoriteTemplates();
   const stats = getStats();
 
-  const handleUseTemplate = (template: Template) => {
+  const handleUseTemplate = async (template: Template) => {
     try {
-      // Get template store and document store instances
+      // Track template usage (백엔드와 동기화됨)
       const templateStore = useTemplateStore.getState();
-      const documentStore = useDocumentStore.getState();
-      
-      // Track template usage (avoiding ESLint hook warning by using store reference)
-      templateStore.useTemplate(template.id);
-
-      // Duplicate the template document to create a new document
-      const duplicatedDoc = documentStore.duplicateDocument(template.id);
-      if (!duplicatedDoc) {
-        throw new Error('템플릿 복제에 실패했습니다.');
-      }
+      await templateStore.useTemplate(template.id);
 
       // Increment user document count
       incrementDocumentCount();
-
-      // Mark the new document as a regular document (not a template)
-      documentStore.convertFromTemplate(duplicatedDoc.id);
 
       // Clean up the title and set as draft
       const cleanTitle = template.title
@@ -93,15 +112,33 @@ export default function TemplatesPage() {
         .replace(/\s*\(복사본\)\s*$/i, '')
         .trim() || '새 문서';
 
-      documentStore.updateDocument(duplicatedDoc.id, {
-        title: cleanTitle,
-        status: 'draft',
-        lastModifiedAt: new Date()
+      // Create document in database via API
+      const response = await fetch('/api/documents', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: cleanTitle,
+          content: template.content,
+          category: template.category,
+          tags: template.tags || [],
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error('문서 생성에 실패했습니다.');
+      }
+
+      const result = await response.json();
+
+      if (!result.success || !result.document) {
+        throw new Error('문서 생성 응답이 올바르지 않습니다.');
+      }
 
       // Navigate to editor with the new document
       if (typeof window !== 'undefined') {
-        window.location.href = `/editor?id=${duplicatedDoc.id}`;
+        window.location.href = `/editor?id=${result.document.id}`;
       }
     } catch (error) {
       console.error('템플릿 사용 중 오류가 발생했습니다:', error);
@@ -118,6 +155,11 @@ export default function TemplatesPage() {
     }
   };
 
+  const handleEditTemplate = (template: Template) => {
+    setEditingTemplate(template);
+    setShowEditModal(true);
+  };
+
   const handleDeleteTemplate = (template: Template) => {
     if (template.isBuiltIn) {
       console.log('공식 템플릿은 삭제할 수 없습니다.');
@@ -126,10 +168,22 @@ export default function TemplatesPage() {
     setShowDeleteConfirm(template.id);
   };
 
-  const confirmDelete = () => {
-    if (showDeleteConfirm) {
-      deleteTemplate(showDeleteConfirm);
+  const confirmDelete = async () => {
+    if (!showDeleteConfirm) return;
+
+    setIsDeleting(true);
+    setDeleteError('');
+
+    try {
+      await deleteTemplate(showDeleteConfirm);
       setShowDeleteConfirm(null);
+      console.log('템플릿이 성공적으로 삭제되었습니다');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '템플릿 삭제에 실패했습니다';
+      setDeleteError(errorMessage);
+      console.error('템플릿 삭제 실패:', error);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -194,6 +248,18 @@ export default function TemplatesPage() {
         setShowCreateModal(true);
         break;
     }
+  };
+
+  const handleCreateSuccess = (template: Template) => {
+    console.log('새 템플릿이 생성되었습니다:', template.title);
+    // 템플릿 스토어가 자동으로 업데이트됩니다
+  };
+
+  const handleEditSuccess = (template: Template) => {
+    console.log('템플릿이 수정되었습니다:', template.title);
+    setShowEditModal(false);
+    setEditingTemplate(null);
+    // 템플릿 스토어가 자동으로 업데이트됩니다
   };
 
   const categories = Object.entries(TEMPLATE_CATEGORY_LABELS).map(([key, label]) => ({
@@ -341,10 +407,10 @@ export default function TemplatesPage() {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => setSelectedCategory('all')}
+              onClick={() => setFilters({ category: 'all' })}
               className={cn(
                 'flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-md transition-colors',
-                selectedCategory === 'all'
+                filters.category === 'all'
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted hover:bg-accent text-muted-foreground'
               )}
@@ -362,10 +428,10 @@ export default function TemplatesPage() {
                   key={category.key}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => setSelectedCategory(category.key)}
+                  onClick={() => setFilters({ category: category.key })}
                   className={cn(
                     'flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-md transition-colors',
-                    selectedCategory === category.key
+                    filters.category === category.key
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted hover:bg-accent text-muted-foreground'
                   )}
@@ -458,7 +524,7 @@ export default function TemplatesPage() {
         </div>
 
         {/* Popular Templates Section */}
-        {selectedCategory === 'all' && !filters.searchTerm && popularTemplates.length > 0 && (
+        {filters.category === 'all' && !filters.searchTerm && popularTemplates.length > 0 && (
           <div className="p-4 border-b border-border">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
@@ -477,6 +543,7 @@ export default function TemplatesPage() {
                   <TemplateCard
                     template={template}
                     onUse={handleUseTemplate}
+                    onEdit={handleEditTemplate}
                     onDuplicate={handleDuplicateTemplate}
                     onDelete={handleDeleteTemplate}
                   />
@@ -487,7 +554,7 @@ export default function TemplatesPage() {
         )}
 
         {/* Favorite Templates Section */}
-        {selectedCategory === 'all' && !filters.searchTerm && favoriteTemplates.length > 0 && (
+        {filters.category === 'all' && !filters.searchTerm && favoriteTemplates.length > 0 && (
           <div className="p-4 border-b border-border">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
@@ -506,6 +573,7 @@ export default function TemplatesPage() {
                   <TemplateCard
                     template={template}
                     onUse={handleUseTemplate}
+                    onEdit={handleEditTemplate}
                     onDuplicate={handleDuplicateTemplate}
                     onDelete={handleDeleteTemplate}
                   />
@@ -526,7 +594,7 @@ export default function TemplatesPage() {
             <>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-foreground">
-                  {selectedCategory === 'all' ? '모든 템플릿' : TEMPLATE_CATEGORY_LABELS[selectedCategory]}
+                  {filters.category === 'all' ? '모든 템플릿' : TEMPLATE_CATEGORY_LABELS[filters.category]}
                 </h2>
                 <div className="text-sm text-muted-foreground">
                   {templates.length}개 템플릿
@@ -544,6 +612,7 @@ export default function TemplatesPage() {
                     <TemplateCard
                       template={template}
                       onUse={handleUseTemplate}
+                      onEdit={handleEditTemplate}
                       onDuplicate={handleDuplicateTemplate}
                       onDelete={handleDeleteTemplate}
                     />
@@ -561,7 +630,7 @@ export default function TemplatesPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-card p-6 rounded-lg shadow-lg max-w-md mx-4"
+            className="bg-card bg-white p-6 rounded-lg shadow-lg max-w-md mx-4"
           >
             <h3 className="text-lg font-semibold text-foreground mb-3">
               템플릿 삭제
@@ -569,49 +638,62 @@ export default function TemplatesPage() {
             <p className="text-muted-foreground mb-6">
               이 템플릿을 삭제하시겠습니까? 삭제된 템플릿은 복구할 수 없습니다.
             </p>
+            
+            {/* 에러 메시지 표시 */}
+            {deleteError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-700">{deleteError}</p>
+              </div>
+            )}
+
             <div className="flex justify-end gap-3">
               <button
-                onClick={() => setShowDeleteConfirm(null)}
-                className="px-4 py-2 text-sm bg-muted hover:bg-accent rounded-lg transition-colors"
+                onClick={() => {
+                  setShowDeleteConfirm(null);
+                  setDeleteError('');
+                }}
+                disabled={isDeleting}
+                className="px-4 py-2 text-sm bg-muted hover:bg-accent rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 취소
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-4 py-2 text-sm bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors"
+                disabled={isDeleting}
+                className="flex items-center gap-2 px-4 py-2 text-sm bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                삭제
+                {isDeleting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white border-solid rounded-full animate-spin"></div>
+                    삭제 중...
+                  </>
+                ) : (
+                  '삭제'
+                )}
               </button>
             </div>
           </motion.div>
+
         </div>
       )}
 
-      {/* Create Template Modal Placeholder */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-card bg-white p-6 rounded-lg shadow-lg max-w-md mx-4"
-          >
-            <h3 className="text-lg font-semibold text-foreground mb-3">
-              새 템플릿 만들기
-            </h3>
-            <p className="text-muted-foreground mb-6">
-              템플릿 생성 기능은 추후 업데이트에서 제공될 예정입니다.
-            </p>
-            <div className="flex justify-end">
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="px-4 py-2 text-sm bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors"
-              >
-                확인
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+      {/* Create Template Modal */}
+      <CreateTemplateModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={handleCreateSuccess}
+      />
+
+      {/* Edit Template Modal */}
+      <EditTemplateModal
+        isOpen={showEditModal}
+        template={editingTemplate}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditingTemplate(null);
+        }}
+        onSuccess={handleEditSuccess}
+      />
     </div>
   );
 }

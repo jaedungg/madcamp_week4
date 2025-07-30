@@ -21,8 +21,8 @@ import {
   TEMPLATE_DIFFICULTY_LABELS,
   TEMPLATE_TONE_LABELS
 } from '@/types/template';
-import { 
-  DocumentCategory, 
+import {
+  DocumentCategory,
   DOCUMENT_CATEGORY_LABELS,
   DOCUMENT_DIFFICULTY_LABELS,
   DOCUMENT_TONE_LABELS
@@ -160,7 +160,10 @@ export default function TemplateCard({
       animate={{ opacity: 1, scale: 1 }}
       whileHover={{ y: -4 }}
       className={cn(
-        'group relative bg-card border border-border rounded-lg p-4 hover:shadow-lg transition-all duration-200',
+        'group relative bg-card border rounded-lg p-4 hover:shadow-lg transition-all duration-200',
+        template.isBuiltIn
+          ? 'border-blue-200 bg-gradient-to-br from-blue-50/30 to-transparent'
+          : 'border-border',
         className
       )}
     >
@@ -171,7 +174,7 @@ export default function TemplateCard({
             <BookTemplate className="w-4 h-4 text-white" />
           </div>
           {template.isBuiltIn && (
-            <div className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+            <div className="flex items-center gap-1 text-xs text-blue-700 bg-gradient-to-r from-blue-100 to-blue-200 px-2.5 py-1 rounded-full font-medium shadow-sm border border-blue-200">
               <Star className="w-3 h-3" />
               공식
             </div>
@@ -208,7 +211,7 @@ export default function TemplateCard({
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="absolute right-0 top-full mt-1 w-40 bg-card border border-border rounded-lg shadow-lg z-10"
+                  className="absolute right-0 top-full mt-1 w-40 bg-card bg-white border border-border rounded-lg shadow-lg z-10"
                 >
                   <div className="py-1">
                     <button
@@ -323,7 +326,7 @@ export default function TemplateCard({
         템플릿 사용하기
       </motion.button>
 
-      {/* Preview on hover */}
+      {/* Preview on hover
       <div className="absolute inset-0 bg-card/95 backdrop-blur-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4 overflow-hidden">
         <div className="h-full flex flex-col">
           <div className="flex items-center justify-between mb-2">
@@ -344,7 +347,7 @@ export default function TemplateCard({
             </p>
           </div>
         </div>
-      </div>
+      </div> */}
     </motion.div>
   );
 }
