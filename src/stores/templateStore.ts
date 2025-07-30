@@ -31,10 +31,10 @@ interface TemplateState {
   // Template management
   createTemplate: (template: Omit<Template, 'id' | 'createdAt' | 'updatedAt' | 'usageCount' | 'isBuiltIn'>) => Template;
   updateTemplate: (id: string, updates: Partial<Template>) => void;
-  deleteTemplate: (id: string) => void;
+  deleteTemplate: (id: string) => Promise<void>;
   duplicateTemplate: (id: string) => Template;
   toggleFavorite: (id: string) => void;
-  useTemplate: (id: string) => void; // Increment usage count
+  useTemplate: (id: string) => Promise<void>; // Increment usage count
   addTemplateFromAPI: (template: any) => void; // API 응답 데이터를 로컬 스토어에 추가
   
   // Filtering and sorting
@@ -149,13 +149,54 @@ export const useTemplateStore = create<TemplateState>()(
         });
       },
 
-      deleteTemplate: (id) => {
+      deleteTemplate: async (id: string): Promise<void> => {
         const documentStore = useDocumentStore.getState();
+        
+        // 삭제하려는 템플릿이 존재하는지 확인
+        const originalDoc = documentStore.documents.find(doc => doc.id === id && doc.isTemplate);
+        
+        if (!originalDoc) {
+          throw new Error('삭제하려는 템플릿을 찾을 수 없습니다');
+        }
+
+        // 공식 템플릿인지 확인
+        if (originalDoc.isBuiltIn) {
+          throw new Error('공식 템플릿은 삭제할 수 없습니다');
+        }
+
+        // 낙관적 업데이트: 먼저 로컬에서 삭제
         documentStore.deleteDocument(id);
         
         set((state) => ({
           selectedTemplates: state.selectedTemplates.filter(templateId => templateId !== id)
         }));
+
+        try {
+          // 백엔드 API 호출
+          const response = await fetch(`/api/templates/${id}`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const result = await response.json();
+
+          if (!result.success) {
+            throw new Error(result.error || '템플릿 삭제에 실패했습니다');
+          }
+
+        } catch (error) {
+          // API 실패 시 롤백: 원래 문서를 복원
+          documentStore.importDocuments([originalDoc]);
+          
+          const errorMessage = error instanceof Error ? error.message : '템플릿 삭제에 실패했습니다';
+          throw new Error(errorMessage);
+        }
       },
 
       duplicateTemplate: (id) => {
@@ -178,13 +219,70 @@ export const useTemplateStore = create<TemplateState>()(
         documentStore.toggleFavorite(id);
       },
 
-      useTemplate: (id) => {
+      useTemplate: async (id: string): Promise<void> => {
         const documentStore = useDocumentStore.getState();
+        
+        // 템플릿이 존재하는지 확인
+        const template = documentStore.documents.find(doc => doc.id === id && doc.isTemplate);
+        if (!template) {
+          throw new Error('사용하려는 템플릿을 찾을 수 없습니다');
+        }
+
+        // 현재 사용 횟수 저장 (롤백용)
+        const originalUsageCount = template.usageCount || 0;
+        
+        // 낙관적 업데이트: 먼저 로컬에서 카운트 증가
         documentStore.useTemplate(id);
+
+        try {
+          // 백엔드 API 호출
+          const response = await fetch(`/api/templates/${id}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ action: 'use' }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const result = await response.json();
+
+          if (!result.success) {
+            throw new Error(result.error || '템플릿 사용 횟수 업데이트에 실패했습니다');
+          }
+
+          // API에서 반환된 실제 사용 횟수로 동기화
+          if (typeof result.usageCount === 'number') {
+            documentStore.updateDocument(id, {
+              usageCount: result.usageCount
+            });
+          }
+
+        } catch (error) {
+          // API 실패 시 로컬 카운트를 원래 값으로 롤백
+          documentStore.updateDocument(id, {
+            usageCount: originalUsageCount
+          });
+          
+          // 사용 횟수 업데이트 실패는 사용자 경험을 크게 해치지 않으므로 경고만 출력
+          console.warn('템플릿 사용 횟수 동기화에 실패했습니다:', error);
+        }
       },
 
       addTemplateFromAPI: (apiTemplate) => {
         const documentStore = useDocumentStore.getState();
+        
+        // 중복 방지: 동일한 ID의 템플릿이 이미 존재하는지 확인
+        const existingTemplate = documentStore.documents.find(doc => doc.id === apiTemplate.id);
+        
+        if (existingTemplate) {
+          // 이미 존재하는 템플릿이면 추가하지 않음
+          console.log(`템플릿 "${apiTemplate.title}" (ID: ${apiTemplate.id})이 이미 존재하므로 건너뛰었습니다.`);
+          return;
+        }
         
         // API 응답 데이터를 Document 형식으로 변환
         const templateDoc = {
@@ -202,16 +300,17 @@ export const useTemplateStore = create<TemplateState>()(
           status: 'completed' as const,
           aiRequestsUsed: 0,
           isTemplate: true,
-          difficulty: apiTemplate.difficulty as DocumentDifficulty,
-          tone: apiTemplate.tone as DocumentTone,
+          difficulty: apiTemplate.difficulty,
+          tone: apiTemplate.tone,
           estimatedWords: apiTemplate.estimated_words || apiTemplate.estimatedWords || 0,
-          isBuiltIn: false,
-          usageCount: 0,
+          isBuiltIn: apiTemplate.isBuiltIn || false,
+          usageCount: apiTemplate.usageCount || 0, // API에서 제공하는 실제 사용 횟수 유지
           preview: apiTemplate.preview || apiTemplate.description || ''
         };
 
         // DocumentStore에 단일 문서로 추가
         documentStore.importDocuments([templateDoc]);
+        console.log(`템플릿 "${apiTemplate.title}" (ID: ${apiTemplate.id})을 성공적으로 추가했습니다.`);
       },
 
       // Filtering and sorting

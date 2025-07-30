@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
-    const includeBuiltIn = searchParams.get('includeBuiltIn') === 'true';
+    const includeBuiltIn = searchParams.get('excludeBuiltIn') !== 'true'; // Include built-in by default
     const sortBy = searchParams.get('sortBy') || 'updated_at';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
 
