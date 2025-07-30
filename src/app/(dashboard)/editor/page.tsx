@@ -23,7 +23,7 @@ export default function EditorPage() {
   const searchParams = useSearchParams();
 
   if (session) {
-    console.log(session.user?.email);
+    console.log(session.user);
   } else {
     console.log("session not found");
   }

@@ -11,6 +11,7 @@ import EmptyState from '@/components/documents/EmptyState';
 import { cn } from '@/lib/utils';
 import { Document } from '@/types/document';
 import { transformDocuments, transformDocument } from '@/lib/transform';
+import ExportModal from '@/components/documents/ExportModal';
 
 interface DocumentsResponse {
   success: boolean;
@@ -53,6 +54,8 @@ export default function DocumentsPage() {
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+
 
   // 문서 목록 불러오기
   const loadDocuments = async () => {
@@ -263,94 +266,6 @@ export default function DocumentsPage() {
     }
   };
 
-  const handleExportDocuments = async () => {
-    try {
-      const response = await fetch('/api/documents/export', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: session?.user?.email }),
-      });
-
-      if (!response.ok) {
-        throw new Error('문서 내보내기에 실패했습니다.');
-      }
-
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `documents-export-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      // 성공 피드백
-      const successMessage = window.document.createElement('div');
-      successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
-      successMessage.textContent = '문서가 성공적으로 내보내지기 되었습니다.';
-      window.document.body.appendChild(successMessage);
-      setTimeout(() => window.document.body.removeChild(successMessage), 3000);
-    } catch (error) {
-      console.error('문서 내보내기 실패:', error);
-      const errorMessage = window.document.createElement('div');
-      errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
-      errorMessage.textContent = error instanceof Error ? error.message : '문서 내보내기 중 오류가 발생했습니다.';
-      window.document.body.appendChild(errorMessage);
-      setTimeout(() => window.document.body.removeChild(errorMessage), 5000);
-    }
-  };
-
-  const handleImportDocuments = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        const data = JSON.parse(e.target?.result as string);
-        if (data.documents && Array.isArray(data.documents)) {
-          const response = await fetch('/api/documents/import', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              documents: data.documents,
-              user_id: session?.user?.email
-            }),
-          });
-
-          if (!response.ok) {
-            throw new Error('문서 가져오기에 실패했습니다.');
-          }
-
-          // 목록 새로고침
-          loadDocuments();
-          // 성공 피드백
-          const successMessage = document.createElement('div');
-          successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
-          successMessage.textContent = '문서를 성공적으로 가져왔습니다.';
-          document.body.appendChild(successMessage);
-          setTimeout(() => document.body.removeChild(successMessage), 3000);
-        } else {
-          const errorMessage = document.createElement('div');
-          errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
-          errorMessage.textContent = '올바르지 않은 파일 형식입니다.';
-          document.body.appendChild(errorMessage);
-          setTimeout(() => document.body.removeChild(errorMessage), 5000);
-        }
-      } catch (error) {
-        console.error('파일 읽기 실패:', error);
-        const errorMessage = document.createElement('div');
-        errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
-        errorMessage.textContent = error instanceof Error ? error.message : '파일 처리 중 오류가 발생했습니다.';
-        document.body.appendChild(errorMessage);
-        setTimeout(() => document.body.removeChild(errorMessage), 5000);
-      }
-    };
-    reader.readAsText(file);
-    // Clear the input so the same file can be selected again
-    event.target.value = '';
-  };
-
   const getEmptyStateType = () => {
     if (searchQuery) return 'search';
     if (favoritesOnly) return 'favorites';
@@ -479,32 +394,18 @@ export default function DocumentsPage() {
 
             {/* Import/Export */}
             <div className="flex items-center gap-2">
-              <input
-                type="file"
-                accept=".json"
-                onChange={handleImportDocuments}
-                className="hidden"
-                id="import-documents"
-              />
-              <motion.label
-                htmlFor="import-documents"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex items-center gap-2 px-3 py-2 text-sm bg-muted hover:bg-accent rounded-lg transition-colors cursor-pointer"
-              >
-                <Upload className="w-4 h-4" />
-                가져오기
-              </motion.label>
-
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={handleExportDocuments}
+                onClick={() => setShowExportModal(true)}
                 className="flex items-center gap-2 px-3 py-2 text-sm bg-muted hover:bg-accent rounded-lg transition-colors"
               >
-                <Download className="w-4 h-4" />
+                <Upload className="w-4 h-4" />
                 내보내기
               </motion.button>
+              {showExportModal && (
+                <ExportModal documents={documents} showExportModal={showExportModal} setShowExportModal={setShowExportModal} />
+              )}
             </div>
 
             {/* Create Document Button */}
