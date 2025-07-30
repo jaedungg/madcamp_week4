@@ -65,6 +65,8 @@ export default function TemplatesPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string>('');
 
   // 페이지 로드 시 서버에서 템플릿 데이터 동기화
   useEffect(() => {
@@ -99,9 +101,9 @@ export default function TemplatesPage() {
 
   const handleUseTemplate = async (template: Template) => {
     try {
-      // Track template usage
+      // Track template usage (백엔드와 동기화됨)
       const templateStore = useTemplateStore.getState();
-      templateStore.useTemplate(template.id);
+      await templateStore.useTemplate(template.id);
 
       // Increment user document count
       incrementDocumentCount();
@@ -168,10 +170,22 @@ export default function TemplatesPage() {
     setShowDeleteConfirm(template.id);
   };
 
-  const confirmDelete = () => {
-    if (showDeleteConfirm) {
-      deleteTemplate(showDeleteConfirm);
+  const confirmDelete = async () => {
+    if (!showDeleteConfirm) return;
+
+    setIsDeleting(true);
+    setDeleteError('');
+
+    try {
+      await deleteTemplate(showDeleteConfirm);
       setShowDeleteConfirm(null);
+      console.log('템플릿이 성공적으로 삭제되었습니다');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '템플릿 삭제에 실패했습니다';
+      setDeleteError(errorMessage);
+      console.error('템플릿 삭제 실패:', error);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -618,7 +632,7 @@ export default function TemplatesPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-card p-6 rounded-lg shadow-lg max-w-md mx-4"
+            className="bg-card bg-white p-6 rounded-lg shadow-lg max-w-md mx-4"
           >
             <h3 className="text-lg font-semibold text-foreground mb-3">
               템플릿 삭제
@@ -626,18 +640,38 @@ export default function TemplatesPage() {
             <p className="text-muted-foreground mb-6">
               이 템플릿을 삭제하시겠습니까? 삭제된 템플릿은 복구할 수 없습니다.
             </p>
+            
+            {/* 에러 메시지 표시 */}
+            {deleteError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-700">{deleteError}</p>
+              </div>
+            )}
+
             <div className="flex justify-end gap-3">
               <button
-                onClick={() => setShowDeleteConfirm(null)}
-                className="px-4 py-2 text-sm bg-muted hover:bg-accent rounded-lg transition-colors"
+                onClick={() => {
+                  setShowDeleteConfirm(null);
+                  setDeleteError('');
+                }}
+                disabled={isDeleting}
+                className="px-4 py-2 text-sm bg-muted hover:bg-accent rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 취소
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-4 py-2 text-sm bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors"
+                disabled={isDeleting}
+                className="flex items-center gap-2 px-4 py-2 text-sm bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                삭제
+                {isDeleting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white border-solid rounded-full animate-spin"></div>
+                    삭제 중...
+                  </>
+                ) : (
+                  '삭제'
+                )}
               </button>
             </div>
           </motion.div>
