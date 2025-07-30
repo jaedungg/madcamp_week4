@@ -161,8 +161,8 @@ export default function TemplateCard({
       whileHover={{ y: -4 }}
       className={cn(
         'group relative bg-card border rounded-lg p-4 hover:shadow-lg transition-all duration-200',
-        template.isBuiltIn 
-          ? 'border-blue-200 bg-gradient-to-br from-blue-50/30 to-transparent' 
+        template.isBuiltIn
+          ? 'border-blue-200 bg-gradient-to-br from-blue-50/30 to-transparent'
           : 'border-border',
         className
       )}
@@ -175,8 +175,8 @@ export default function TemplateCard({
           </div>
           {template.isBuiltIn && (
             <div className="flex items-center gap-1 text-xs text-blue-700 bg-gradient-to-r from-blue-100 to-blue-200 px-2.5 py-1 rounded-full font-medium shadow-sm border border-blue-200">
-              <Star className="w-3 h-3 fill-current" />
-              공식 템플릿
+              <Star className="w-3 h-3" />
+              공식
             </div>
           )}
         </div>
