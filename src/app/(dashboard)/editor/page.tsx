@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Save, Share, MoreHorizontal, Loader2, FileText } from 'lucide-react';
+import { Save, Share, MoreHorizontal, Loader2, FileText, Mail, Send } from 'lucide-react';
 import AIEditor from '@/components/editor/AIEditor';
 import LetterExportModal from '@/components/editor/LetterExportModal';
 import { useSession } from 'next-auth/react';
@@ -410,10 +410,10 @@ export default function EditorPage() {
               type="text"
               value={documentTitle}
               onChange={(e) => handleTitleChange(e.target.value)}
-              className="text-lg font-semibold text-foreground bg-transparent border-none outline-none focus:ring-0 p-0"
+              className="text-xl font-semibold text-foreground bg-transparent border-none outline-none focus:ring-0 p-0"
               placeholder="제목 없는 문서"
             />
-            <p className="text-sm text-muted-foreground">
+            <p className="text-base text-muted-foreground">
               {isSaving
                 ? '저장 중...'
                 : lastSaved
@@ -424,13 +424,13 @@ export default function EditorPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleSave}
             disabled={isSaving}
-            className="flex items-center gap-2 px-3 py-2 text-sm bg-muted hover:bg-accent rounded-lg transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-3 py-2 text-base bg-muted hover:bg-accent rounded-lg transition-colors disabled:opacity-50"
           >
             <Save className={`w-4 h-4 ${isSaving ? 'animate-spin' : ''}`} />
             {isSaving ? '저장 중...' : '저장'}
@@ -453,7 +453,7 @@ export default function EditorPage() {
               onClick={() => setShowMoreActions(!showMoreActions)}
               className="p-2 hover:bg-accent rounded-lg transition-colors"
             >
-              <MoreHorizontal className="w-4 h-4" />
+              <Send className="w-4 h-4" />
             </motion.button>
 
             {showMoreActions && (
@@ -462,15 +462,15 @@ export default function EditorPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 className="absolute right-0 top-full mt-1 w-48 bg-card bg-white border border-border rounded-lg shadow-lg z-10"
               >
-                <div className="py-1">
+                <div className="py-2">
                   <button
                     onClick={() => {
                       handleEmailRedirect();
                       setShowMoreActions(false);
                     }}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-accent"
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-foreground hover:bg-accent"
                   >
-                    <Share className="w-4 h-4" />
+                    <Mail className="w-4 h-4" />
                     이메일로 이동
                   </button>
                   <button
@@ -478,7 +478,7 @@ export default function EditorPage() {
                       setShowLetterExportModal(true);
                       setShowMoreActions(false);
                     }}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-accent"
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-foreground hover:bg-accent"
                   >
                     <FileText className="w-4 h-4" />
                     편지로 내보내기
