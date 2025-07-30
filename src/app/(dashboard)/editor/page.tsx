@@ -2,8 +2,9 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Save, Share, MoreHorizontal, Loader2 } from 'lucide-react';
+import { Save, Share, MoreHorizontal, Loader2, FileText } from 'lucide-react';
 import AIEditor from '@/components/editor/AIEditor';
+import LetterExportModal from '@/components/editor/LetterExportModal';
 import { useSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -37,6 +38,7 @@ export default function EditorPage() {
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [showMoreActions, setShowMoreActions] = useState(false); // Added state for MoreHorizontal dropdown
+  const [showLetterExportModal, setShowLetterExportModal] = useState(false); // Added state for Letter Export Modal
   const editorRef = useRef<Editor | null>(null);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const savingRef = useRef<boolean>(false);
@@ -458,7 +460,7 @@ export default function EditorPage() {
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="absolute right-0 top-full mt-1 w-40 bg-card bg-white border border-border rounded-lg shadow-lg z-10"
+                className="absolute right-0 top-full mt-1 w-48 bg-card bg-white border border-border rounded-lg shadow-lg z-10"
               >
                 <div className="py-1">
                   <button
@@ -470,6 +472,16 @@ export default function EditorPage() {
                   >
                     <Share className="w-4 h-4" />
                     이메일로 이동
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowLetterExportModal(true);
+                      setShowMoreActions(false);
+                    }}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-accent"
+                  >
+                    <FileText className="w-4 h-4" />
+                    편지로 내보내기
                   </button>
                 </div>
               </motion.div>
@@ -551,6 +563,15 @@ export default function EditorPage() {
           </div>
         </div>
       </div>
+
+      {/* Letter Export Modal */}
+      <LetterExportModal
+        isOpen={showLetterExportModal}
+        onClose={() => setShowLetterExportModal(false)}
+        content={content}
+        title={documentTitle}
+        userId={session?.user?.email || ''}
+      />
     </div>
   );
 }

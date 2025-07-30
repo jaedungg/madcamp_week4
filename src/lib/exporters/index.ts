@@ -3,6 +3,8 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import type { Document, ExportOptions } from '../types/export';
+import { generateLetterHTML } from '../letter-templates';
+import { LetterExportOptions } from '@/types/letter';
 
 /**
  * 메인 파일 생성 함수
@@ -12,7 +14,9 @@ export async function generateExportFile(
   options: ExportOptions
 ): Promise<{ filePath: string; downloadUrl: string; fileSize: number }> {
   const timestamp = Date.now();
-  const filename = `${options.userId}_${timestamp}_documents.${options.format}`;
+  const fileExtension = options.format === 'letter' ? 'pdf' : options.format;
+  const filenamePrefix = options.format === 'letter' ? 'letter' : 'documents';
+  const filename = `${options.userId}_${timestamp}_${filenamePrefix}.${fileExtension}`;
   const exportsDir = path.join(process.cwd(), 'public/exports/temp');
   const filePath = path.join(exportsDir, filename);
 
@@ -30,6 +34,9 @@ export async function generateExportFile(
       break;
     case 'pdf':
       fileSize = await generatePDFFile(documents, filePath, options);
+      break;
+    case 'letter':
+      fileSize = await generateLetterFile(documents, filePath, options);
       break;
     default:
       throw new Error(`지원하지 않는 형식: ${options.format}`);
@@ -320,4 +327,69 @@ function generatePDFHTML(documents: Document[], options: ExportOptions): string 
     </body>
     </html>
   `;
+}
+
+/**
+ * 편지 PDF 파일 생성
+ */
+async function generateLetterFile(
+  documents: Document[],
+  filePath: string,
+  options: ExportOptions
+): Promise<number> {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const puppeteer = require('puppeteer');
+
+  if (!options.letterOptions) {
+    throw new Error('편지 내보내기에는 letterOptions가 필요합니다.');
+  }
+
+  // 첫 번째 문서만 사용 (편지는 단일 문서 내보내기)
+  const document = documents[0];
+  if (!document) {
+    throw new Error('내보낼 문서가 없습니다.');
+  }
+
+  const letterOptions: LetterExportOptions = {
+    design: options.letterOptions.design,
+    content: document.content || '',
+    title: document.title,
+    recipient: options.letterOptions.recipient,
+    sender: options.letterOptions.sender,
+    date: options.letterOptions.date,
+    userId: options.userId
+  };
+
+  let browser;
+  try {
+    browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+
+    const page = await browser.newPage();
+
+    // 편지 HTML 템플릿 생성
+    const htmlContent = generateLetterHTML(letterOptions);
+    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+
+    await page.pdf({
+      path: filePath,
+      format: 'A4',
+      margin: {
+        top: '20px',
+        bottom: '20px',
+        left: '20px',
+        right: '20px'
+      },
+      printBackground: true
+    });
+
+    const stats = await fs.stat(filePath);
+    return stats.size;
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
+  }
 }
