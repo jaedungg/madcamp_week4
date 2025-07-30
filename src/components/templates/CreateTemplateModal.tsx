@@ -744,7 +744,18 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
 
                   <div className="flex flex-wrap gap-3">
                     <button
-                      onClick={() => handleNext()}
+                      onClick={() => {
+                        if (selectedResult) {
+                          setTemplateData(prev => ({
+                            ...prev,
+                            title: selectedResult.title,
+                            content: selectedResult.content,
+                            tags: selectedResult.tags,
+                            preview: selectedResult.preview
+                          }));
+                        }
+                        handleNext();
+                      }}
                       className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white hover:bg-green-700 rounded-lg transition-colors"
                     >
                       <CheckCircle className="w-4 h-4" />
@@ -1018,12 +1029,12 @@ export default function CreateTemplateModal({ isOpen, onClose, onSuccess }: Crea
           </div>
         </div>
 
-        {/* Keyboard Shortcuts Help */}
+        {/* Keyboard Shortcuts Help
         <div className="px-6 pb-2">
           <p className="text-xs text-gray-400">
             단축키: Ctrl+Enter (다음), Esc ({currentStep === 'basic' ? '닫기' : '이전'})
           </p>
-        </div>
+        </div> */}
       </motion.div>
     </div>
   );
