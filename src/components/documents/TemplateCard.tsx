@@ -208,7 +208,7 @@ export default function TemplateCard({
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="absolute right-0 top-full mt-1 w-40 bg-card border border-border rounded-lg shadow-lg z-10"
+                  className="absolute right-0 top-full mt-1 w-40 bg-card bg-white border border-border rounded-lg shadow-lg z-10"
                 >
                   <div className="py-1">
                     <button

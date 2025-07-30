@@ -15,10 +15,10 @@ import {
   GraduationCap,
   TrendingUp
 } from 'lucide-react';
-import { 
+import {
   Template,
-  TemplateCategory, 
-  TemplateDifficulty, 
+  TemplateCategory,
+  TemplateDifficulty,
   TemplateTone,
   TEMPLATE_CATEGORY_LABELS,
   TEMPLATE_DIFFICULTY_LABELS,
@@ -47,7 +47,7 @@ export default function EditTemplateModal({ isOpen, template, onClose, onSuccess
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [tagInput, setTagInput] = useState('');
-  
+
   // 편집 가능한 템플릿 데이터
   const [formData, setFormData] = useState({
     title: '',
@@ -79,7 +79,7 @@ export default function EditTemplateModal({ isOpen, template, onClose, onSuccess
   // 템플릿 수정 저장
   const saveChanges = async () => {
     if (!template) return;
-    
+
     if (!formData.title.trim() || !formData.content.trim()) {
       setError('제목과 내용을 모두 입력해주세요');
       return;
@@ -146,7 +146,7 @@ export default function EditTemplateModal({ isOpen, template, onClose, onSuccess
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
-        className="bg-card rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden"
+        className="bg-card bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden"
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border">
@@ -179,10 +179,10 @@ export default function EditTemplateModal({ isOpen, template, onClose, onSuccess
                   공식 템플릿은 수정할 수 없습니다. 복사본을 만들어서 편집해보세요.
                 </p>
               </div>
-              
+
               <div>
                 <h3 className="text-lg font-semibold mb-4">템플릿 정보</h3>
-                
+
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">제목</label>
@@ -255,7 +255,7 @@ export default function EditTemplateModal({ isOpen, template, onClose, onSuccess
                 />
               </div>
 
-              {/* Category Selection */}  
+              {/* Category Selection */}
               <div>
                 <label className="block text-sm font-medium text-foreground mb-3">
                   카테고리
