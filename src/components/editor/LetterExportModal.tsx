@@ -130,10 +130,10 @@ export default function LetterExportModal({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div className="flex-shrink-0 flex items-center justify-between p-6 border-b border-gray-200">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
                   <FileText className="w-5 h-5 text-primary" />
@@ -151,7 +151,8 @@ export default function LetterExportModal({
               </button>
             </div>
 
-            <div className="p-6">
+            {/* Scrollable Content */}
+            <div className="flex-grow overflow-y-auto p-6">
               {/* Design Selection */}
               <div className="mb-8">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">편지 디자인 선택</h3>
@@ -248,36 +249,36 @@ export default function LetterExportModal({
                   />
                 </div>
               </div>
+            </div>
 
-              {/* Actions */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
-                <button
-                  onClick={onClose}
-                  disabled={isExporting}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  취소
-                </button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleExport}
-                  disabled={isExporting}
-                  className="flex items-center gap-2 px-6 py-2 bg-primary text-white hover:bg-primary/90 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isExporting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      내보내는 중...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="w-4 h-4" />
-                      편지로 내보내기
-                    </>
-                  )}
-                </motion.button>
-              </div>
+            {/* Actions */}
+            <div className="flex-shrink-0 flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+              <button
+                onClick={onClose}
+                disabled={isExporting}
+                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                취소
+              </button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleExport}
+                disabled={isExporting}
+                className="flex items-center gap-2 px-6 py-2 bg-primary text-white hover:bg-primary/90 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isExporting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    내보내는 중...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" />
+                    편지로 내보내기
+                  </>
+                )}
+              </motion.button>
             </div>
           </motion.div>
         </div>
