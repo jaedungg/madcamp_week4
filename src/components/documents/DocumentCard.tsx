@@ -11,7 +11,8 @@ import {
   Trash2,
   Calendar,
   Type,
-  Tag
+  Tag,
+  Clock
 } from 'lucide-react';
 import { Document, DOCUMENT_CATEGORY_LABELS, DOCUMENT_STATUS_LABELS } from '@/types/document';
 import { cn } from '@/lib/utils';
@@ -25,6 +26,13 @@ interface DocumentCardProps {
   onDelete?: (document: Document) => void;
   onToggleFavorite?: (documentId: string) => void;
   className?: string;
+  isRecent?: boolean;
+  activityInfo?: {
+    isModification: boolean;
+    activityType: string;
+    displayTime: Date;
+    icon: string;
+}
 }
 
 export default function DocumentCard({
@@ -34,7 +42,9 @@ export default function DocumentCard({
   onDuplicate,
   onDelete,
   onToggleFavorite,
-  className
+  className, 
+  isRecent = false,
+  activityInfo
 }: DocumentCardProps) {
   const router = useRouter();
   const [showActions, setShowActions] = React.useState(false);
@@ -136,6 +146,25 @@ export default function DocumentCard({
       default:
         return 'bg-gray-100 text-gray-700';
     }
+  };
+
+  const formatRelativeTime = (date: Date) => {
+
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    if (minutes < 1) return '방금 전';
+    if (minutes < 60) return `${minutes}분 전`;
+    if (hours < 24) return `${hours}시간 전`;
+    if (days < 7) return `${days}일 전`;
+
+    return new Intl.DateTimeFormat('ko-KR', {
+      month: 'short',
+      day: 'numeric'
+    }).format(date);
   };
 
   function ActionsButton () {
@@ -242,27 +271,29 @@ export default function DocumentCard({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-1">
-          <div className={document.isFavorite ? '' : 'hidden group-hover:block transition-all'}>
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={handleFavoriteClick}
-              className={cn(
-                'p-2 rounded-lg transition-colors',
-                document.isFavorite
-                  ? 'text-red-500 hover:bg-red-50'
-                  : 'text-muted-foreground hover:bg-muted'
-              )}
-            >
-              <Heart className={cn('w-4 h-4', document.isFavorite && 'fill-current')} />
-            </motion.button>
-          </div>
+        {!isRecent &&
+          <div className="flex items-center gap-1">
+            <div className={document.isFavorite ? '' : 'hidden group-hover:block transition-all'}>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={handleFavoriteClick}
+                className={cn(
+                  'p-2 rounded-lg transition-colors',
+                  document.isFavorite
+                    ? 'text-red-500 hover:bg-red-50'
+                    : 'text-muted-foreground hover:bg-muted'
+                )}
+              >
+                <Heart className={cn('w-4 h-4', document.isFavorite && 'fill-current')} />
+              </motion.button>
+            </div>
 
-          <div className='hidden group-hover:block transition-all'>
-            {ActionsButton()}
+            <div className='hidden group-hover:block transition-all'>
+              {ActionsButton()}
+            </div>
           </div>
-        </div>
+        }
       </motion.div>
     );
   }
@@ -302,28 +333,36 @@ export default function DocumentCard({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center ">
-          <div className={document.isFavorite ? '' : 'hidden group-hover:block transition-all'}>
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={handleFavoriteClick}
-              className={cn(
-                'p-2 rounded-lg transition-colors',
-                document.isFavorite
-                  ? 'text-red-500 hover:bg-red-50'
-                  : 'text-muted-foreground hover:bg-muted'
-              )}
-            >
-              <Heart className={cn('w-4 h-4', document.isFavorite && 'fill-current')} />
-            </motion.button>
-          </div>
+        {!isRecent &&
+          <div className="flex items-center ">
+            <div className={document.isFavorite ? '' : 'hidden group-hover:block transition-all'}>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={handleFavoriteClick}
+                className={cn(
+                  'p-2 rounded-lg transition-colors',
+                  document.isFavorite
+                    ? 'text-red-500 hover:bg-red-50'
+                    : 'text-muted-foreground hover:bg-muted'
+                )}
+              >
+                <Heart className={cn('w-4 h-4', document.isFavorite && 'fill-current')} />
+              </motion.button>
+            </div>
 
-          <div className='hidden group-hover:block transition-all'>
-            {ActionsButton()}
+            <div className='hidden group-hover:block transition-all'>
+              {ActionsButton()}
+            </div>
           </div>
-        </div>
-
+        }
+        {activityInfo && (
+          <div className={`text-xs px-2 pr-3 py-1 rounded-full flex items-center gap-1 text-white bg-blue-500`}>
+            <span className="text-xs">{activityInfo.icon}</span>
+            <Clock className="w-3 h-3" />
+            {formatRelativeTime(activityInfo.displayTime)}
+          </div>
+        )}
       </div>
 
       {/* Title */}

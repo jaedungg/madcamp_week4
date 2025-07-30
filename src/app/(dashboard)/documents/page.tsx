@@ -493,7 +493,7 @@ export default function DocumentsPage() {
             onAction={handleEmptyStateAction}
           />
         ) : (
-          <div className="p-6">
+          <div className="p-4">
             <div className={cn(
               'transition-all duration-300',
               viewMode === 'grid'

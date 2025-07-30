@@ -163,7 +163,7 @@ export default function TemplateCard({
       className={cn(
         'group relative bg-card border rounded-lg p-4 hover:shadow-lg transition-all duration-200',
         template.isBuiltIn
-          ? 'border-blue-200 bg-gradient-to-br from-blue-50/30 to-transparent'
+          ? 'border-blue-200'
           : 'border-border',
         className
       )}

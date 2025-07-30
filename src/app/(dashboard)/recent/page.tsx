@@ -443,7 +443,7 @@ export default function RecentDocumentsPage() {
             onAction={handleCreateDocument}
           />
         ) : (
-          <div className="p-6">
+          <div className="p-4">
             {viewMode === 'list' ? (
               // List view with enhanced recent info
               <div className="space-y-4">
@@ -509,21 +509,9 @@ export default function RecentDocumentsPage() {
                       onEdit={handleEditDocument}
                       onDuplicate={handleDuplicateDocument}
                       onDelete={handleDeleteDocument}
+                      isRecent={true}
+                      activityInfo={getDocumentActivityInfo(document)}
                     />
-                    {/* Recent badge with modification indicator */}
-                    {(() => {
-                      const activityInfo = getDocumentActivityInfo(document);
-                      return (
-                        <div className={`absolute top-2 right-2 text-xs px-2 py-1 rounded-full flex items-center gap-1 ${activityInfo.isModification
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-primary/90 text-primary-foreground'
-                          }`}>
-                          <span className="text-xs">{activityInfo.icon}</span>
-                          <Clock className="w-3 h-3" />
-                          {formatRelativeTime(activityInfo.displayTime)}
-                        </div>
-                      );
-                    })()}
                   </motion.div>
                 ))}
               </div>
