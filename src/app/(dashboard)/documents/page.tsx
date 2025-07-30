@@ -352,8 +352,8 @@ export default function DocumentsPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex-shrink-0 p-6 border-b border-border">
-        <div className="flex items-center justify-between mb-6">
+      <div className="flex-shrink-0 p-4 border-b border-border">
+        <div className="flex items-center justify-between mb-3">
           <div>
             <h1 className="text-2xl font-bold text-foreground">모든 문서</h1>
             <p className="text-muted-foreground">

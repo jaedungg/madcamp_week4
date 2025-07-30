@@ -138,6 +138,52 @@ export default function DocumentCard({
     }
   };
 
+  function ActionsButton () {
+    return (
+      <div className="relative">
+      <motion.button
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        onClick={handleActionsClick}
+        className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
+      >
+        <MoreHorizontal className="w-4 h-4" />
+      </motion.button>
+    
+      {showActions && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-black border border-border rounded-lg shadow-lg z-10"
+        >
+          <div className="py-1">
+            <button
+              onClick={handleEdit}
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-accent"
+            >
+              <Edit3 className="w-4 h-4" />
+              편집
+            </button>
+            <button
+              onClick={handleDuplicate}
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-accent"
+            >
+              <Copy className="w-4 h-4" />
+              복사
+            </button>
+            <button
+              onClick={handleDelete}
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+            >
+              <Trash2 className="w-4 h-4" />
+              삭제
+            </button>
+          </div>
+        </motion.div>
+      )}
+    </div>
+  )}
+
   if (viewMode === 'list') {
     return (
       <motion.div
@@ -192,14 +238,14 @@ export default function DocumentCard({
                   'text-xs px-2 py-1 rounded-full font-medium',
                   getCategoryColor(document.category)
                 )}>
-                  {DOCUMENT_CATEGORY_LABELS[document.category]}
+                  {document.category}
                 </span>
-                <span className={cn(
+                {/* <span className={cn(
                   'text-xs px-2 py-1 rounded-full font-medium',
                   getStatusColor(document.status)
                 )}>
                   {DOCUMENT_STATUS_LABELS[document.status]}
-                </span>
+                </span> */}
               </div>
             </div>
           </div>
@@ -221,48 +267,7 @@ export default function DocumentCard({
             <Heart className={cn('w-4 h-4', document.isFavorite && 'fill-current')} />
           </motion.button>
 
-          <div className="relative">
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={handleActionsClick}
-              className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
-            >
-              <MoreHorizontal className="w-4 h-4" />
-            </motion.button>
-
-            {showActions && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="absolute right-0 top-full mt-1 w-40 bg-card border border-border rounded-lg shadow-lg z-10"
-              >
-                <div className="py-1">
-                  <button
-                    onClick={handleEdit}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground bg-white hover:bg-accent"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                    편집
-                  </button>
-                  <button
-                    onClick={handleDuplicate}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground bg-white hover:bg-accent"
-                  >
-                    <Copy className="w-4 h-4" />
-                    복사
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 bg-white hover:bg-red-50"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    삭제
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </div>
+          {ActionsButton()}
         </div>
       </motion.div>
     );
@@ -291,14 +296,14 @@ export default function DocumentCard({
               'text-xs px-2 py-1 rounded-full font-medium',
               getCategoryColor(document.category)
             )}>
-              {DOCUMENT_CATEGORY_LABELS[document.category]}
+              {document.category}
             </span>
-            <span className={cn(
+            {/* <span className={cn(
               'text-xs px-2 py-1 rounded-full font-medium',
               getStatusColor(document.status)
             )}>
               {DOCUMENT_STATUS_LABELS[document.status]}
-            </span>
+            </span> */}
           </div>
         </div>
 
@@ -317,48 +322,7 @@ export default function DocumentCard({
             <Heart className={cn('w-4 h-4', document.isFavorite && 'fill-current')} />
           </motion.button>
 
-          <div className="relative">
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={handleActionsClick}
-              className="p-1.5 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
-            >
-              <MoreHorizontal className="w-4 h-4" />
-            </motion.button>
-
-            {showActions && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="absolute right-0 top-full mt-1 w-40 bg-card border border-border rounded-lg shadow-lg z-10"
-              >
-                <div className="py-1">
-                  <button
-                    onClick={handleEdit}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground bg-white hover:bg-accent"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                    편집
-                  </button>
-                  <button
-                    onClick={handleDuplicate}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground bg-white hover:bg-accent"
-                  >
-                    <Copy className="w-4 h-4" />
-                    복사
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 bg-white hover:bg-red-50"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    삭제
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </div>
+          {ActionsButton()}
         </div>
       </div>
 

@@ -275,7 +275,7 @@ export default function TemplatesPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex-shrink-0 p-3 border-b border-border">
+      <div className="flex-shrink-0 p-4 border-b border-border">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <h1 className="text-2xl sm:text-2xl font-bold text-foreground flex items-center gap-3">
@@ -300,7 +300,7 @@ export default function TemplatesPage() {
         </div>
 
         {/* Stats - Responsive Compact Version */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-3 mb-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-3 mb-3.5">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

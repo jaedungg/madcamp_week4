@@ -294,7 +294,7 @@ export default function RecentDocumentsPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex-shrink-0 p-3 border-b border-border">
+      <div className="flex-shrink-0 p-4 pb-2 border-b border-border">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
@@ -374,7 +374,7 @@ export default function RecentDocumentsPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Time Filter */}
-            <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+            <div className="flex items-center gap-1 bg-muted rounded-lg">
               {[
                 { key: 'all', label: '전체' },
                 { key: 'today', label: '오늘' },
