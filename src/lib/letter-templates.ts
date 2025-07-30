@@ -336,7 +336,6 @@ function generatePersonalLetterHTML(options: LetterExportOptions, date: string):
         
         ${recipient ? `<div class="recipient">${recipient}에게</div>` : ''}
         
-        <div class="greeting">안녕하세요!</div>
         
         <div class="content">
           ${formatContentForLetter(content)}
@@ -345,7 +344,6 @@ function generatePersonalLetterHTML(options: LetterExportOptions, date: string):
         <div class="decorative-line"></div>
         
         <div class="closing">
-          // <div class="closing-phrase">마음을 담아</div>
           <div class="sender-name">${sender || '당신의 친구'} 올림</div>
         </div>
       </div>
@@ -576,7 +574,7 @@ function generateInvitationLetterHTML(options: LetterExportOptions, date: string
           margin-bottom: 1.5em;
         }
         .highlight-box {
-          background: linear-gradient(135deg, #fef9e7, #fed7aa);
+          background: linear-gradient(135deg, #fef9e7, #fef9e7);
           border-left: 5px solid #f6ad55;
           padding: 20px;
           margin: 25px 0;
@@ -621,7 +619,6 @@ function generateInvitationLetterHTML(options: LetterExportOptions, date: string
         <div class="decorative-separator">❋ ❋ ❋</div>
         
         <div class="content">
-          ${title && title !== '제목 없는 문서' ? `<div class="highlight-box"><strong>${title}</strong></div>` : ''}
           ${formatContentForLetter(content)}
         </div>
         
