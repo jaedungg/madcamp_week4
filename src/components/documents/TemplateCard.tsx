@@ -255,7 +255,7 @@ export default function TemplateCard({
       </p>
 
       {/* Metadata */}
-      <div className="flex flex-wrap gap-2 mb-4">
+      <div className="flex flex-wrap gap-1 mb-4">
         <span className={cn(
           'text-xs px-2 py-1 rounded-full font-medium',
           getCategoryColor(template.category)
@@ -289,7 +289,7 @@ export default function TemplateCard({
           </div>
         )}
 
-        <span className="text-xs px-2 py-1 bg-muted text-muted-foreground rounded-full flex items-center gap-1">
+        <span className="text-xs px-0.5 py-1 bg-muted text-muted-foreground rounded-full flex items-center gap-0.5">
           <span>{getToneIcon(template.tone)}</span>
           {TEMPLATE_TONE_LABELS[template.tone]}
         </span>

@@ -96,6 +96,7 @@ export default function TemplatesPage() {
   }, []);
 
   const templates = getFilteredTemplates();
+  console.log("templates", templates);
   const popularTemplates = getPopularTemplates(6);
   const favoriteTemplates = getFavoriteTemplates();
   const stats = getStats();
@@ -509,7 +510,7 @@ export default function TemplatesPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {popularTemplates.map((template, index) => (
                 <motion.div
-                  key={template.id}
+                  key={template.id || index}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
@@ -539,7 +540,7 @@ export default function TemplatesPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {favoriteTemplates.slice(0, 8).map((template, index) => (
                 <motion.div
-                  key={template.id}
+                  key={template.id || index}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
@@ -578,7 +579,7 @@ export default function TemplatesPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
                 {templates.map((template, index) => (
                   <motion.div
-                    key={template.id}
+                    key={template.id || index}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
