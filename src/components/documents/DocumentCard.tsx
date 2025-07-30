@@ -204,11 +204,19 @@ export default function DocumentCard({
 
         {/* Document Info */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between">
+          <div className="flex items-start ">
             <div className="flex-1 min-w-0 pr-4">
-              <h3 className="font-medium text-foreground truncate mb-1">
-                {document.title}
-              </h3>
+              <div className='flex flex-row items-center gap-2 mb-1'>
+                <h3 className="font-medium text-foreground truncate ">
+                  {document.title}
+                </h3>
+                <span className={cn(
+                  'text-xs px-2 py-1 rounded-full font-medium',
+                  getCategoryColor(document.category)
+                )}>
+                  {document.category}
+                </span>
+            </div>
               <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                 {document.excerpt || '내용 없음'}
               </p>
@@ -230,44 +238,30 @@ export default function DocumentCard({
                 )}
               </div>
             </div>
-
-            {/* Status and Category */}
-            <div className="flex flex-col items-end gap-2">
-              <div className="flex items-center gap-2">
-                <span className={cn(
-                  'text-xs px-2 py-1 rounded-full font-medium',
-                  getCategoryColor(document.category)
-                )}>
-                  {document.category}
-                </span>
-                {/* <span className={cn(
-                  'text-xs px-2 py-1 rounded-full font-medium',
-                  getStatusColor(document.status)
-                )}>
-                  {DOCUMENT_STATUS_LABELS[document.status]}
-                </span> */}
-              </div>
-            </div>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={handleFavoriteClick}
-            className={cn(
-              'p-2 rounded-lg transition-colors',
-              document.isFavorite
-                ? 'text-red-500 hover:bg-red-50'
-                : 'text-muted-foreground hover:bg-muted'
-            )}
-          >
-            <Heart className={cn('w-4 h-4', document.isFavorite && 'fill-current')} />
-          </motion.button>
+        <div className="flex items-center gap-1">
+          <div className={document.isFavorite ? '' : 'hidden group-hover:block transition-all'}>
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={handleFavoriteClick}
+              className={cn(
+                'p-2 rounded-lg transition-colors',
+                document.isFavorite
+                  ? 'text-red-500 hover:bg-red-50'
+                  : 'text-muted-foreground hover:bg-muted'
+              )}
+            >
+              <Heart className={cn('w-4 h-4', document.isFavorite && 'fill-current')} />
+            </motion.button>
+          </div>
 
-          {ActionsButton()}
+          <div className='hidden group-hover:block transition-all'>
+            {ActionsButton()}
+          </div>
         </div>
       </motion.div>
     );
@@ -307,23 +301,29 @@ export default function DocumentCard({
           </div>
         </div>
 
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={handleFavoriteClick}
-            className={cn(
-              'p-1.5 rounded-lg transition-colors',
-              document.isFavorite
-                ? 'text-red-500 hover:bg-red-50'
-                : 'text-muted-foreground hover:bg-muted'
-            )}
-          >
-            <Heart className={cn('w-4 h-4', document.isFavorite && 'fill-current')} />
-          </motion.button>
+        {/* Actions */}
+        <div className="flex items-center ">
+          <div className={document.isFavorite ? '' : 'hidden group-hover:block transition-all'}>
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={handleFavoriteClick}
+              className={cn(
+                'p-2 rounded-lg transition-colors',
+                document.isFavorite
+                  ? 'text-red-500 hover:bg-red-50'
+                  : 'text-muted-foreground hover:bg-muted'
+              )}
+            >
+              <Heart className={cn('w-4 h-4', document.isFavorite && 'fill-current')} />
+            </motion.button>
+          </div>
 
-          {ActionsButton()}
+          <div className='hidden group-hover:block transition-all'>
+            {ActionsButton()}
+          </div>
         </div>
+
       </div>
 
       {/* Title */}

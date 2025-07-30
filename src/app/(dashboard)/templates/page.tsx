@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import {
   BookTemplate,
   Plus,
-  Star,
+  Heart,
   TrendingUp,
   Download,
   Upload,
@@ -304,15 +304,15 @@ export default function TemplatesPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-r from-purple-300/25 to-purple-500/25 p-2.5 sm:p-3 rounded-lg border border-purple-300/50"
+            className="bg-gradient-to-r from-blue-300/25 to-blue-500/25 p-2.5 sm:p-3 rounded-lg border border-blue-300/50"
           >
             <div className="flex items-center gap-2">
-              <div className="w-8.5 h-8.5 sm:w-8 sm:h-8 bg-purple-500 rounded-md flex items-center justify-center flex-shrink-0">
+              <div className="w-8.5 h-8.5 sm:w-8 sm:h-8 bg-blue-500 rounded-md flex items-center justify-center flex-shrink-0">
                 <BookTemplate className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
               </div>
               <div className="w-full flex flex-row justify-between ml-1 mr-2 items-center">
-                <p className="text-base dark:text-white text-purple-700 truncate">전체 템플릿</p>
-                <p className="text-base sm:text-lg dark:text-white font-bold text-purple-900">{stats.totalTemplates}개</p>
+                <p className="text-base dark:text-white text-blue-700 truncate">전체 템플릿</p>
+                <p className="text-base sm:text-lg dark:text-white font-bold text-blue-900">{stats.totalTemplates}개</p>
               </div>
             </div>
           </motion.div>
@@ -321,15 +321,15 @@ export default function TemplatesPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-gradient-to-r from-blue-300/25 to-blue-500/25 p-2.5 sm:p-3 rounded-lg border border-blue-300/50"
+            className="bg-gradient-to-r from-green-300/25 to-green-500/25 p-2.5 sm:p-3 rounded-lg border border-green-300/50"
           >
             <div className="flex items-center gap-2">
-              <div className="w-8.5 h-8.5 sm:w-8 sm:h-8 bg-blue-500 rounded-md flex items-center justify-center flex-shrink-0">
-                <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+              <div className="w-8.5 h-8.5 sm:w-8 sm:h-8 bg-green-500 rounded-md flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
               </div>
               <div className="w-full flex flex-row justify-between ml-1 mr-2 items-center">
-                <p className="text-base dark:text-white text-blue-700 truncate">공식 템플릿</p>
-                <p className="text-base sm:text-lg dark:text-white font-bold text-blue-900">{stats.builtInCount}개</p>
+                <p className="text-base dark:text-white text-green-700 truncate">공식 템플릿</p>
+                <p className="text-base sm:text-lg dark:text-white font-bold text-green-900">{stats.builtInCount}개</p>
               </div>
             </div>
           </motion.div>
@@ -338,15 +338,15 @@ export default function TemplatesPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-gradient-to-r from-red-300/25 to-red-500/25 p-2.5 sm:p-3 rounded-lg border border-red-300/50"
+            className="bg-gradient-to-r from-purple-300/25 to-purple-500/25 p-2.5 sm:p-3 rounded-lg border border-purple-300/50"
           >
             <div className="flex items-center gap-2">
-              <div className="w-8.5 h-8.5 sm:w-8 sm:h-8 bg-red-500 rounded-md flex items-center justify-center flex-shrink-0">
-                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+              <div className="w-8.5 h-8.5 sm:w-8 sm:h-8 bg-purple-500 rounded-md flex items-center justify-center flex-shrink-0">
+                <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
               </div>
               <div className="w-full flex flex-row justify-between ml-1 mr-2 items-center">
-                <p className="text-base dark:text-white text-red-700 truncate">즐겨찾기</p>
-                <p className="text-base sm:text-lg dark:text-white font-bold text-red-900">{stats.favoriteCount}개</p>
+                <p className="text-base dark:text-white text-purple-700 truncate">즐겨찾기</p>
+                <p className="text-base sm:text-lg dark:text-white font-bold text-purple-900">{stats.favoriteCount}개</p>
               </div>
             </div>
           </motion.div>
@@ -463,7 +463,7 @@ export default function TemplatesPage() {
                     )}
                     title="즐겨찾기만 보기"
                   >
-                    <Star className={cn('w-4 h-4', filters.showFavoritesOnly && 'fill-current')} />
+                    <Heart className={cn('w-4 h-4', filters.showFavoritesOnly && 'fill-current')} />
                     <span className="hidden md:inline text-xs">즐겨찾기</span>
                   </motion.button>
 
@@ -532,7 +532,7 @@ export default function TemplatesPage() {
           <div className="p-4 border-b border-border">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <Star className="w-5 h-5 text-primary" />
+                <Heart className="w-5 h-5 text-primary" />
                 즐겨찾기 템플릿
               </h2>
             </div>
