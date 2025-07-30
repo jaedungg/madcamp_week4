@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Download, Upload, Trash2, Search, Filter, Star } from 'lucide-react';
+import { Plus, Download, Upload, Trash2, Search, Filter, Heart } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import DocumentCard from '@/components/documents/DocumentCard';
@@ -472,7 +472,7 @@ export default function DocumentsPage() {
                     : 'bg-muted hover:bg-accent'
                 )}
               >
-                <Star className="w-4 h-4" />
+                <Heart className="w-4 h-4" />
                 즐겨찾기
               </button>
             </div>

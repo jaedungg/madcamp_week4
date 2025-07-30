@@ -13,7 +13,8 @@ import {
   TrendingUp,
   Clock,
   Star,
-  Users
+  Users,
+  Sparkle
 } from 'lucide-react';
 import {
   Template,
@@ -169,19 +170,19 @@ export default function TemplateCard({
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
             <BookTemplate className="w-4 h-4 text-white" />
           </div>
           {template.isBuiltIn && (
-            <div className="flex items-center gap-1 text-xs text-blue-700 bg-gradient-to-r from-blue-100 to-blue-200 px-2.5 py-1 rounded-full font-medium shadow-sm border border-blue-200">
-              <Star className="w-3 h-3" />
+            <div className="flex items-center gap-1 text-xs text-blue-500 bg-gradient-to-r from-blue-50 to-blue-100 px-2.5 py-1 rounded-full font-medium ">
+              <Sparkle className="w-3 h-3" />
               공식
             </div>
           )}
         </div>
 
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className={`flex items-center gap-1 ${!template.isFavorite && "opacity-0"}  group-hover:opacity-100 transition-opacity`}>
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
@@ -262,12 +263,31 @@ export default function TemplateCard({
           {TEMPLATE_CATEGORY_LABELS[template.category]}
         </span>
 
-        <span className={cn(
+        {/* <span className={cn(
           'text-xs px-2 py-1 rounded-full font-medium',
           getDifficultyColor(template.difficulty)
         )}>
           {TEMPLATE_DIFFICULTY_LABELS[template.difficulty]}
-        </span>
+        </span> */}
+        
+        {/* Tags */}
+        {template.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {template.tags.slice(0, template.tags.length > 3 ? 2 : 3).map((tag) => (
+              <span
+                key={tag}
+                className="text-xs px-2 py-1 bg-accent text-accent-foreground rounded-full"
+              >
+                {tag}
+              </span>
+            ))}
+            {template.tags.length > 3 && (
+              <span className="text-xs px-2 py-1 bg-accent text-accent-foreground rounded-full">
+                +{template.tags.length - 2}
+              </span>
+            )}
+          </div>
+        )}
 
         <span className="text-xs px-2 py-1 bg-muted text-muted-foreground rounded-full flex items-center gap-1">
           <span>{getToneIcon(template.tone)}</span>
@@ -275,24 +295,7 @@ export default function TemplateCard({
         </span>
       </div>
 
-      {/* Tags */}
-      {template.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1 mb-4">
-          {template.tags.slice(0, 3).map((tag) => (
-            <span
-              key={tag}
-              className="text-xs px-2 py-1 bg-accent text-accent-foreground rounded-full"
-            >
-              {tag}
-            </span>
-          ))}
-          {template.tags.length > 3 && (
-            <span className="text-xs px-2 py-1 bg-accent text-accent-foreground rounded-full">
-              +{template.tags.length - 3}
-            </span>
-          )}
-        </div>
-      )}
+
 
       {/* Stats */}
       <div className="flex items-center justify-between text-xs text-muted-foreground mb-4">
@@ -307,12 +310,12 @@ export default function TemplateCard({
           </div>
         </div>
 
-        {(template.usageCount || 0) > 10 && (
+        {/* {(template.usageCount || 0) > 10 && (
           <div className="flex items-center gap-1 text-orange-600">
             <TrendingUp className="w-3 h-3" />
             인기
           </div>
-        )}
+        )} */}
       </div>
 
       {/* Action Button */}
