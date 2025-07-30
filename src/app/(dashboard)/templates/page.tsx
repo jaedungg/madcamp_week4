@@ -17,7 +17,9 @@ import {
   Users,
   GraduationCap,
   Search,
-  X
+  X,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 import { useTemplateStore } from '@/stores/templateStore';
 import { useDocumentStore } from '@/stores/documentStore';
@@ -65,6 +67,7 @@ export default function TemplatesPage() {
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string>('');
+  const [showSearchAndFilters, setShowSearchAndFilters] = useState(false);
 
   // 페이지 로드 시 서버에서 템플릿 데이터 동기화
   useEffect(() => {
@@ -392,84 +395,107 @@ export default function TemplatesPage() {
                 </motion.button>
               );
             })}
+
+            <div className='absolute right-3 flex items-end justify-end'>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowSearchAndFilters(!showSearchAndFilters)}
+                className="flex items-center gap-1 px-2.5 py-1.5 text-sm rounded-md transition-all duration-200 text-muted-foreground hover:bg-accent"
+              >
+                {!showSearchAndFilters ? (
+                  <>
+                    <ChevronDown className="w-4 h-4" />
+                    검색/필터 열기
+                  </>
+                ) : (
+                  <>
+                    <ChevronUp className="w-4 h-4" />
+                    검색/필터 접기
+                  </>
+                )}
+              </motion.button>
+            </div>
           </div>
         </div>
 
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto relative">
+      <div className="flex-1 overflow-y-auto relative">
         {/* Filters and Search - Sticky Top Bar */}
-        <div className="sticky top-0 z-10 bg-background/98 backdrop-blur-md border-b border-border shadow-sm">
-          <div className="px-3 py-1.5">
-            <div className="flex items-center gap-3">
-              {/* Search */}
-              <div className="flex-1 max-w-sm relative">
-                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="템플릿 검색..."
-                  value={filters.searchTerm}
-                  onChange={(e) => setFilters({ searchTerm: e.target.value })}
-                  className="w-full pl-10 pr-8 py-2 bg-muted/50 border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:bg-background transition-all text-sm"
-                />
-                {filters.searchTerm && (
-                  <button
-                    onClick={() => setFilters({ searchTerm: '' })}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-background rounded-full transition-colors"
+        {showSearchAndFilters && (
+          <div className="sticky top-0 z-10 bg-background/98 backdrop-blur-md border-b border-border shadow-sm">
+            <div className="px-3 py-1.5">
+              <div className="flex items-center gap-3">
+                {/* Search */}
+                <div className="flex-1 max-w-sm relative">
+                  <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="템플릿 검색..."
+                    value={filters.searchTerm}
+                    onChange={(e) => setFilters({ searchTerm: e.target.value })}
+                    className="w-full pl-10 pr-8 py-2 bg-muted/50 border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:bg-background transition-all text-sm"
+                  />
+                  {filters.searchTerm && (
+                    <button
+                      onClick={() => setFilters({ searchTerm: '' })}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-background rounded-full transition-colors"
+                    >
+                      <X className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Quick Filters */}
+                <div className="flex items-center gap-1.5">
+                  {/* Favorites Toggle */}
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setFilters({ showFavoritesOnly: !filters.showFavoritesOnly })}
+                    className={cn(
+                      'flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-lg transition-all',
+                      filters.showFavoritesOnly
+                        ? 'bg-red-100 text-red-700 hover:bg-red-200 shadow-sm'
+                        : 'bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground'
+                    )}
+                    title="즐겨찾기만 보기"
                   >
-                    <X className="w-3.5 h-3.5 text-muted-foreground" />
-                  </button>
-                )}
-              </div>
+                    <Star className={cn('w-4 h-4', filters.showFavoritesOnly && 'fill-current')} />
+                    <span className="hidden md:inline text-xs">즐겨찾기</span>
+                  </motion.button>
 
-              {/* Quick Filters */}
-              <div className="flex items-center gap-1.5">
-                {/* Favorites Toggle */}
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setFilters({ showFavoritesOnly: !filters.showFavoritesOnly })}
-                  className={cn(
-                    'flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-lg transition-all',
-                    filters.showFavoritesOnly
-                      ? 'bg-red-100 text-red-700 hover:bg-red-200 shadow-sm'
-                      : 'bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground'
-                  )}
-                  title="즐겨찾기만 보기"
-                >
-                  <Star className={cn('w-4 h-4', filters.showFavoritesOnly && 'fill-current')} />
-                  <span className="hidden md:inline text-xs">즐겨찾기</span>
-                </motion.button>
+                  {/* Sort Toggle */}
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setFilters({ sortOrder: filters.sortOrder === 'desc' ? 'asc' : 'desc' })}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground rounded-lg transition-all"
+                    title={filters.sortOrder === 'desc' ? '내림차순' : '오름차순'}
+                  >
+                    {filters.sortOrder === 'desc' ? (
+                      <TrendingUp className="w-4 h-4" />
+                    ) : (
+                      <TrendingUp className="w-4 h-4 rotate-180" />
+                    )}
+                    <span className="hidden md:inline text-xs">정렬</span>
+                  </motion.button>
 
-                {/* Sort Toggle */}
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setFilters({ sortOrder: filters.sortOrder === 'desc' ? 'asc' : 'desc' })}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground rounded-lg transition-all"
-                  title={filters.sortOrder === 'desc' ? '내림차순' : '오름차순'}
-                >
-                  {filters.sortOrder === 'desc' ? (
-                    <TrendingUp className="w-4 h-4" />
-                  ) : (
-                    <TrendingUp className="w-4 h-4 rotate-180" />
-                  )}
-                  <span className="hidden md:inline text-xs">정렬</span>
-                </motion.button>
-
-                {/* Advanced Filters */}
-                <SearchAndFilters
-                  type="templates"
-                  filters={filters}
-                  onFiltersChange={setFilters as (filters: Partial<TemplateFilters | DocumentFilters>) => void}
-                  onReset={resetFilters}
-                  className="flex items-center"
-                />
+                  {/* Advanced Filters */}
+                  <SearchAndFilters
+                    type="templates"
+                    filters={filters}
+                    onFiltersChange={setFilters as (filters: Partial<TemplateFilters | DocumentFilters>) => void}
+                    onReset={resetFilters}
+                    className="flex items-center"
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Popular Templates Section */}
         {filters.category === 'all' && !filters.searchTerm && popularTemplates.length > 0 && (
