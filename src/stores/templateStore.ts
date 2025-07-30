@@ -275,6 +275,15 @@ export const useTemplateStore = create<TemplateState>()(
       addTemplateFromAPI: (apiTemplate) => {
         const documentStore = useDocumentStore.getState();
         
+        // 중복 방지: 동일한 ID의 템플릿이 이미 존재하는지 확인
+        const existingTemplate = documentStore.documents.find(doc => doc.id === apiTemplate.id);
+        
+        if (existingTemplate) {
+          // 이미 존재하는 템플릿이면 추가하지 않음
+          console.log(`템플릿 "${apiTemplate.title}" (ID: ${apiTemplate.id})이 이미 존재하므로 건너뛰었습니다.`);
+          return;
+        }
+        
         // API 응답 데이터를 Document 형식으로 변환
         const templateDoc = {
           id: apiTemplate.id,
@@ -295,12 +304,13 @@ export const useTemplateStore = create<TemplateState>()(
           tone: apiTemplate.tone,
           estimatedWords: apiTemplate.estimated_words || apiTemplate.estimatedWords || 0,
           isBuiltIn: apiTemplate.isBuiltIn || false,
-          usageCount: 0,
+          usageCount: apiTemplate.usageCount || 0, // API에서 제공하는 실제 사용 횟수 유지
           preview: apiTemplate.preview || apiTemplate.description || ''
         };
 
         // DocumentStore에 단일 문서로 추가
         documentStore.importDocuments([templateDoc]);
+        console.log(`템플릿 "${apiTemplate.title}" (ID: ${apiTemplate.id})을 성공적으로 추가했습니다.`);
       },
 
       // Filtering and sorting

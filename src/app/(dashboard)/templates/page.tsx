@@ -79,7 +79,7 @@ export default function TemplatesPage() {
           if (result.success && result.templates) {
             // 서버에서 받은 템플릿 데이터를 로컬 스토어에 동기화
             const templateStore = useTemplateStore.getState();
-            result.templates.forEach((template: any) => {
+            result.templates.forEach((template: unknown) => {
               templateStore.addTemplateFromAPI(template);
             });
           }
