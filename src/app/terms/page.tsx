@@ -5,8 +5,8 @@ export default function Home() {
   // Redirect to editor page - users will be redirected to login if not authenticated
   return (
     <div className='flex w-full h-full mx-auto my-auto items-center justify-center'>
-      <Link href="/signup" className="text-primary hover:underline font-medium">
-        하하하하하
+      <Link href="/signup" className="text-gray-300 mt-80 hover:underline font-bold text-4xl text-italic">
+        하하핳핳하하
       </Link>
     </div>
   )
