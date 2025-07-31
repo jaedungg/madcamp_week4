@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Crown, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -8,37 +8,46 @@ import { useSession } from 'next-auth/react';
 import PlanSelector from '@/components/upgrade/PlanSelector';
 import OrderSummary from '@/components/upgrade/OrderSummary';
 import PaymentWidget from '@/components/upgrade/PaymentWidget';
-import { LoadingCard } from '@/components/upgrade/LoadingSpinner';
+import LoadingSpinner from '@/components/upgrade/LoadingSpinner';
 import { BillingCycle, PaymentSummary } from '@/types/payment';
 import { createPaymentSummary } from '@/lib/tossPayments';
 import { useUserPlan, useCanUpgrade } from '@/stores/userStore';
+import { useHasHydrated } from '@/stores/userStore';
 
 export default function UpgradePage() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const currentPlan = useUserPlan();
-  const { canUpgradeToPremium, canUpgradeToEnterprise } = useCanUpgrade();
-
+  const [mounted, setMounted] = useState(false);
+  const hasHydrated = useHasHydrated();
   const [step, setStep] = useState<'plan' | 'payment'>('plan');
   const [selectedPlan, setSelectedPlan] = useState<'premium' | 'enterprise' | null>(null);
   const [selectedBillingCycle, setSelectedBillingCycle] = useState<BillingCycle>('monthly');
+  const currentPlan = useUserPlan();
+  const { canUpgradeToPremium, canUpgradeToEnterprise } = useCanUpgrade();
+
+  // useEffect(() => {
+  //   setMounted(true);
+  //   if (status === 'unauthenticated') {
+  //     router.push('/login');
+  //   }
+  // }, [status, router]);
 
   // 결제 요약 정보 계산
   const paymentSummary: PaymentSummary | null = useMemo(() => {
     if (!selectedPlan) return null;
-    
+
     const discountPercent = selectedBillingCycle === 'yearly' ? 20 : 0;
     return createPaymentSummary(selectedPlan, selectedBillingCycle, discountPercent);
   }, [selectedPlan, selectedBillingCycle]);
 
-  // 로딩 상태
-  if (status === 'loading') {
+  // Conditional loading/hydration check
+  if (status === 'loading' || !mounted || !hasHydrated) { // Modified condition
     return (
       <div className="flex flex-col h-full">
         <div className="flex-1 p-6">
           <div className="max-w-6xl mx-auto">
-            <LoadingCard 
-              title="계정 정보 확인 중..." 
+            <LoadingSpinner
+              title="계정 정보 확인 중..."
               message="잠시만 기다려주세요."
             />
           </div>
@@ -47,9 +56,8 @@ export default function UpgradePage() {
     );
   }
 
-  // 인증되지 않은 사용자
+  // 인증되지 않은 사용자 (useEffect에서 처리되므로 여기서는 null 반환만)
   if (!session) {
-    router.push('/login');
     return null;
   }
 
@@ -81,7 +89,7 @@ export default function UpgradePage() {
                 엔터프라이즈 플랜의 모든 기능을 마음껏 사용하세요.
               </p>
             </div>
-            
+
             <button
               onClick={() => router.push('/profile')}
               className="bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors"
@@ -102,7 +110,7 @@ export default function UpgradePage() {
     if (plan === 'enterprise' && !canUpgradeToEnterprise) {
       return;
     }
-    
+
     setSelectedPlan(plan);
   };
 
@@ -141,8 +149,8 @@ export default function UpgradePage() {
               <h1 className="text-2xl font-bold text-foreground">플랜 업그레이드</h1>
             </div>
             <p className="text-muted-foreground mt-1">
-              {step === 'plan' 
-                ? '더 강력한 기능으로 업그레이드하세요' 
+              {step === 'plan'
+                ? '더 강력한 기능으로 업그레이드하세요'
                 : '결제 정보를 입력해주세요'
               }
             </p>
@@ -153,8 +161,8 @@ export default function UpgradePage() {
         <div className="flex items-center gap-2">
           <div className={`
             flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium
-            ${step === 'plan' 
-              ? 'bg-primary text-primary-foreground' 
+            ${step === 'plan'
+              ? 'bg-primary text-primary-foreground'
               : 'bg-green-500 text-white'
             }
           `}>
@@ -163,8 +171,8 @@ export default function UpgradePage() {
           <div className="w-8 h-0.5 bg-border"></div>
           <div className={`
             flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium
-            ${step === 'payment' 
-              ? 'bg-primary text-primary-foreground' 
+            ${step === 'payment'
+              ? 'bg-primary text-primary-foreground'
               : 'bg-muted text-muted-foreground'
             }
           `}>
@@ -199,7 +207,7 @@ export default function UpgradePage() {
                 <div className="lg:col-span-1">
                   <div className="sticky top-6">
                     <OrderSummary paymentSummary={paymentSummary} />
-                    
+
                     {selectedPlan && paymentSummary && (
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}

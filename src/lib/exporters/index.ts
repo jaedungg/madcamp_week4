@@ -97,7 +97,7 @@ async function generateCSVFile(
   filePath: string,
   options: ExportOptions
 ): Promise<number> {
-  const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+  import { createObjectCsvWriter } from 'csv-writer';
 
   const headers = [
     { id: 'id', title: 'ID' },
@@ -149,13 +149,13 @@ async function generateCSVFile(
 /**
  * PDF 파일 생성
  */
+import puppeteer from 'puppeteer';
+
 async function generatePDFFile(
   documents: Document[],
   filePath: string,
   options: ExportOptions
 ): Promise<number> {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const puppeteer = require('puppeteer');
 
   let browser;
   try {

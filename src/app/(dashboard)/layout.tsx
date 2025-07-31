@@ -16,18 +16,18 @@ export default function DashboardLayout({
 
   console.log("session: ", session?.user);
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login");
-    }
-  }, [status, router]);
-  
+  // useEffect(() => {
+  //   if (status === "unauthenticated") {
+  //     router.push("/login");
+  //   }
+  // }, [status, router]);
+
   return (
     <EditorProvider>
       <div className="flex h-screen bg-background">
         {/* Sidebar */}
         <DashboardSidebar />
-        
+
         {/* Main Content */}
         <main className="flex-1 flex flex-col overflow-hidden">
           {children}
