@@ -16,11 +16,11 @@ export default function DashboardLayout({
 
   console.log("session: ", session?.user);
 
-  // useEffect(() => {
-  //   if (status === "unauthenticated") {
-  //     router.push("/login");
-  //   }
-  // }, [status, router]);
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    }
+  }, [status, router]);
 
   return (
     <EditorProvider>
