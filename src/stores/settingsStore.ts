@@ -22,9 +22,6 @@ interface SettingsState {
   theme: 'light' | 'dark' | 'system';
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
   
-  colorScheme: 'default' | 'blue' | 'green' | 'purple';
-  setColorScheme: (scheme: 'default' | 'blue' | 'green' | 'purple') => void;
-  
   // 에디터 설정
   fontSize: number;
   setFontSize: (size: number) => void;
@@ -32,21 +29,8 @@ interface SettingsState {
   fontFamily: 'system' | 'serif' | 'mono';
   setFontFamily: (family: 'system' | 'serif' | 'mono') => void;
   
-  lineHeight: number;
-  setLineHeight: (height: number) => void;
-  
   autoSave: boolean;
   setAutoSave: (enabled: boolean) => void;
-  
-  // 개인정보 설정
-  dataRetentionDays: number;
-  setDataRetentionDays: (days: number) => void;
-  
-  allowUsageAnalytics: boolean;
-  setAllowUsageAnalytics: (allow: boolean) => void;
-  
-  marketingNotifications: boolean;
-  setMarketingNotifications: (allow: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -81,11 +65,6 @@ export const useSettingsStore = create<SettingsState>()(
         set({ theme });
       },
       
-      colorScheme: 'default' as const,
-      setColorScheme: (scheme: 'default' | 'blue' | 'green' | 'purple') => {
-        set({ colorScheme: scheme });
-      },
-      
       // 에디터 설정 기본값
       fontSize: 16,
       setFontSize: (size: number) => {
@@ -97,48 +76,22 @@ export const useSettingsStore = create<SettingsState>()(
         set({ fontFamily: family });
       },
       
-      lineHeight: 1.6,
-      setLineHeight: (height: number) => {
-        set({ lineHeight: height });
-      },
-      
       autoSave: true,
       setAutoSave: (enabled: boolean) => {
         set({ autoSave: enabled });
       },
-      
-      // 개인정보 설정 기본값
-      dataRetentionDays: 90,
-      setDataRetentionDays: (days: number) => {
-        set({ dataRetentionDays: days });
-      },
-      
-      allowUsageAnalytics: true,
-      setAllowUsageAnalytics: (allow: boolean) => {
-        set({ allowUsageAnalytics: allow });
-      },
-      
-      marketingNotifications: false,
-      setMarketingNotifications: (allow: boolean) => {
-        set({ marketingNotifications: allow });
-      },
     }),
     {
       name: 'from-settings-storage', // localStorage 키
-      // 민감하지 않은 UI 설정만 저장
+      // UI 설정 저장
       partialize: (state) => ({
         predictionEnabled: state.predictionEnabled,
         aiResponseSpeed: state.aiResponseSpeed,
         defaultTone: state.defaultTone,
         theme: state.theme,
-        colorScheme: state.colorScheme,
         fontSize: state.fontSize,
         fontFamily: state.fontFamily,
-        lineHeight: state.lineHeight,
         autoSave: state.autoSave,
-        dataRetentionDays: state.dataRetentionDays,
-        allowUsageAnalytics: state.allowUsageAnalytics,
-        marketingNotifications: state.marketingNotifications,
       }),
     }
   )
@@ -149,22 +102,26 @@ export const usePredictionEnabled = () => useSettingsStore((state) => state.pred
 export const useTogglePrediction = () => useSettingsStore((state) => state.togglePrediction);
 export const useSetPredictionEnabled = () => useSettingsStore((state) => state.setPredictionEnabled);
 
-// 추가된 설정들을 위한 hooks
+// 테마 설정 hooks
 export const useTheme = () => useSettingsStore((state) => state.theme);
 export const useSetTheme = () => useSettingsStore((state) => state.setTheme);
+
+// AI 설정 hooks
 export const useAiSettings = () => useSettingsStore((state) => ({
+  predictionEnabled: state.predictionEnabled,
   speed: state.aiResponseSpeed,
   tone: state.defaultTone,
+  setPredictionEnabled: state.setPredictionEnabled,
   setSpeed: state.setAiResponseSpeed,
   setTone: state.setDefaultTone,
 }));
+
+// 에디터 설정 hooks
 export const useEditorSettings = () => useSettingsStore((state) => ({
   fontSize: state.fontSize,
   fontFamily: state.fontFamily,
-  lineHeight: state.lineHeight,
   autoSave: state.autoSave,
   setFontSize: state.setFontSize,
   setFontFamily: state.setFontFamily,
-  setLineHeight: state.setLineHeight,
   setAutoSave: state.setAutoSave,
 }));
