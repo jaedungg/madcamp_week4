@@ -15,7 +15,8 @@ import {
   Sparkles,
   Mail,
   MessageSquare,
-  LogOut
+  LogOut,
+  Crown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUserStore } from '@/stores/userStore';
@@ -27,7 +28,8 @@ const menuItems = [
   { icon: Plus, label: '새 문서', href: '/editor', primary: true },
   { icon: FileText, label: '모든 문서', href: '/documents' },
   { icon: Clock, label: '최근 문서', href: '/recent' },
-  { icon: BookTemplate, label: '템플릿', href: '/templates' }
+  { icon: BookTemplate, label: '템플릿', href: '/templates' },
+  { icon: Crown, label: '플랜 업그레이드', href: '/upgrade', premium: true }
 ];
 
 export default function DashboardSidebar() {

@@ -19,6 +19,7 @@
     "@tiptap/pm": "^3.0.7",
     "@tiptap/react": "^3.0.7",
     "@tiptap/starter-kit": "^3.0.7",
+    "@tosspayments/tosspayments-sdk": "^2.3.5",
     "bcrypt": "^6.0.0",
     "clsx": "^2.1.1",
     "csv-parse": "^6.1.0",
