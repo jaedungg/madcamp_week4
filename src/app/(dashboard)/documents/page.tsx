@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Download, Upload, Trash2, Search, Filter, Star } from 'lucide-react';
+import { Plus, Download, Upload, Trash2, Search, Filter, Heart } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import DocumentCard from '@/components/documents/DocumentCard';
@@ -352,8 +352,8 @@ export default function DocumentsPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex-shrink-0 p-6 border-b border-border">
-        <div className="flex items-center justify-between mb-6">
+      <div className="flex-shrink-0 p-4 border-b border-border">
+        <div className="flex items-center justify-between mb-3">
           <div>
             <h1 className="text-2xl font-bold text-foreground">모든 문서</h1>
             <p className="text-muted-foreground">
@@ -472,7 +472,7 @@ export default function DocumentsPage() {
                     : 'bg-muted hover:bg-accent'
                 )}
               >
-                <Star className="w-4 h-4" />
+                <Heart className="w-4 h-4" />
                 즐겨찾기
               </button>
             </div>
@@ -493,7 +493,7 @@ export default function DocumentsPage() {
             onAction={handleEmptyStateAction}
           />
         ) : (
-          <div className="p-6">
+          <div className="p-4">
             <div className={cn(
               'transition-all duration-300',
               viewMode === 'grid'
