@@ -1,9 +1,17 @@
 // 문서 내보내기 관련 타입 정의
 
+import { LetterDesign } from '@/types/letter';
+
 export interface ExportRequest {
-  format: 'json' | 'csv' | 'pdf';
+  format: 'json' | 'csv' | 'pdf' | 'letter';
   documentIds?: string[];
   includeContent?: boolean;
+  letterOptions?: {
+    design: LetterDesign;
+    recipient?: string;
+    sender?: string;
+    date?: string;
+  };
 }
 
 export interface ExportResponse {
@@ -35,6 +43,12 @@ export interface Document {
 
 export interface ExportOptions {
   userId: string;
-  format: 'json' | 'csv' | 'pdf';
+  format: 'json' | 'csv' | 'pdf' | 'letter';
   includeMetadata?: boolean;
+  letterOptions?: {
+    design: LetterDesign;
+    recipient?: string;
+    sender?: string;
+    date?: string;
+  };
 }
