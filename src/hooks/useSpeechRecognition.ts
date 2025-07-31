@@ -183,7 +183,7 @@ export function useSpeechRecognition(options: UseSpeechRecognitionOptions = {}):
         recognitionRef.current = null;
       }
     };
-  }, [finalConfig.language, finalConfig.continuous, finalConfig.interimResults, finalConfig.maxAlternatives, onCommand, onError, onResult, state.error]);
+  }, [finalConfig.language, finalConfig.continuous, finalConfig.interimResults, finalConfig.maxAlternatives, onCommand, onError, onResult]);
 
   // Request microphone permission
   const requestPermission = useCallback(async (): Promise<boolean> => {

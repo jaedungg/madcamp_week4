@@ -25,7 +25,7 @@ import SpeechRecognitionButton from './SpeechRecognitionButton';
 import TextPredictionOverlay from './TextPredictionOverlay';
 import PredictionToggle from './PredictionToggle';
 import { useTextPrediction } from '@/hooks/useTextPrediction';
-import { usePredictionEnabled, useTogglePrediction } from '@/stores/settingsStore';
+import { usePredictionEnabled, useTogglePrediction, useSettingsStore } from '@/stores/settingsStore';
 import { Editor } from '@tiptap/core';
 
 interface ToolbarButtonProps {
@@ -93,6 +93,12 @@ export default function AIEditor({
   // store에서 예측 설정 가져오기
   const enablePrediction = usePredictionEnabled();
   const togglePrediction = useTogglePrediction();
+  
+  // 에디터 설정 가져오기 (개별 selector로 참조 안정성 확보)
+  const fontSize = useSettingsStore(state => state.fontSize);
+  const fontFamily = useSettingsStore(state => state.fontFamily);
+  
+  
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [commandPalettePosition, setCommandPalettePosition] = useState({ x: 0, y: 0 });
   const editorContainerRef = useRef<HTMLDivElement>(null);
@@ -165,6 +171,26 @@ export default function AIEditor({
       onEditorReady(editor);
     }
   }, [editor, onEditorReady]);
+
+  // 폰트 설정 동적 적용
+  useEffect(() => {
+    if (!editor) return;
+
+    const editorElement = editor.view.dom as HTMLElement;
+    if (editorElement) {
+      // 폰트 크기 적용
+      editorElement.style.fontSize = `${fontSize}px`;
+      
+      // 폰트 패밀리 적용
+      const fontFamilyValue = {
+        'serif': 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif',
+        'mono': 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
+        'system': 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif'
+      }[fontFamily] || 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif';
+      
+      editorElement.style.fontFamily = fontFamilyValue;
+    }
+  }, [editor, fontSize, fontFamily]);
 
   // content가 변경되면 에디터 내용 업데이트
   useEffect(() => {

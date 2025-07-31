@@ -363,7 +363,7 @@ export default function TemplatesPage() {
               className={cn(
                 'flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-md transition-colors',
                 filters.category === 'all'
-                  ? 'bg-accent text-muted-foreground'
+                  ? 'bg-accent '
                   : 'bg-muted hover:bg-accent text-muted-foreground'
               )}
             >
@@ -384,7 +384,7 @@ export default function TemplatesPage() {
                   className={cn(
                     'flex items-center gap-1.5 px-2.5 py-1.5 text-sm rounded-md transition-colors',
                     filters.category === category.key
-                      ? 'bg-accent text-muted-foreground'
+                      ? 'bg-accent'
                       : 'bg-muted hover:bg-accent text-muted-foreground'
                   )}
                 >

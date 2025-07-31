@@ -93,4 +93,62 @@ model users {
   document_access_logs document_access_logs[]
   document_shares      document_shares[]
   documents            documents[]
+  subscriptions        subscriptions[]
+  payment_orders       payment_orders[]
+}
+
+model subscriptions {
+  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id           String         @db.Uuid
+  plan_type         String         @db.VarChar(20) // 'premium', 'enterprise'
+  status            String         @default("active") @db.VarChar(20) // 'active', 'canceled', 'expired', 'pending'
+  started_at        DateTime       @default(now()) @db.Timestamptz(6)
+  expires_at        DateTime?      @db.Timestamptz(6)
+  canceled_at       DateTime?      @db.Timestamptz(6)
+  auto_renew        Boolean        @default(true)
+  created_at        DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime       @default(now()) @updatedAt @db.Timestamptz(6)
+  
+  // Relations
+  users             users          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  payment_orders    payment_orders[]
+
+  @@index([user_id], map: "idx_subscriptions_user_id")
+  @@index([status], map: "idx_subscriptions_status")
+  @@index([expires_at], map: "idx_subscriptions_expires_at")
+}
+
+model payment_orders {
+  id                 String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            String         @db.Uuid
+  subscription_id    String?        @db.Uuid
+  order_id           String         @unique @db.VarChar(100) // TossPayments orderId
+  payment_key        String?        @db.VarChar(200) // TossPayments paymentKey
+  amount             Int            // 결제 금액 (원 단위)
+  currency           String         @default("KRW") @db.VarChar(5)
+  plan_type          String         @db.VarChar(20) // 'premium', 'enterprise'
+  status             String         @default("pending") @db.VarChar(20) // 'pending', 'paid', 'failed', 'canceled', 'refunded'
+  payment_method     String?        @db.VarChar(50) // 결제 수단
+  failure_reason     String?        @db.VarChar(500) // 실패 사유
+  paid_at            DateTime?      @db.Timestamptz(6)
+  canceled_at        DateTime?      @db.Timestamptz(6)
+  refunded_at        DateTime?      @db.Timestamptz(6)
+  created_at         DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime       @default(now()) @updatedAt @db.Timestamptz(6)
+  
+  // TossPayments specific fields
+  toss_order_name    String?        @db.VarChar(100) // 주문명
+  toss_customer_email String?       @db.VarChar(100) // 고객 이메일
+  toss_customer_name String?        @db.VarChar(50)  // 고객명
+  
+  // Relations
+  users              users          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  subscriptions      subscriptions? @relation(fields: [subscription_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id], map: "idx_payment_orders_user_id")
+  @@index([order_id], map: "idx_payment_orders_order_id")
+  @@index([payment_key], map: "idx_payment_orders_payment_key")
+  @@index([status], map: "idx_payment_orders_status")
+  @@index([created_at], map: "idx_payment_orders_created_at")
+  @@index([subscription_id], map: "idx_payment_orders_subscription_id")
 }

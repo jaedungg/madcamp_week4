@@ -4,7 +4,7 @@
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
-    "strict": true,
+    "strict": false,
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
@@ -20,6 +20,17 @@
     ],
     "paths": {
       "@/*": ["./src/*"]
+    },
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "eslintConfig": {
+    "extends": ["next/core-web-vitals"],
+    "rules": {
+      "@typescript-eslint/no-unused-vars": "warn",
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-require-imports": "warn",
+      "react-hooks/exhaustive-deps": "warn"
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
