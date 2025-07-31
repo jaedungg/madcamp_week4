@@ -23,6 +23,7 @@ import { useUserStore } from '@/stores/userStore';
 import { signOut, useSession } from 'next-auth/react';
 import { insertOrReplaceText } from '@/lib/ai/services';
 import { useEditor } from '@/contexts/EditorContext';
+import { useRouter } from 'next/navigation';
 
 const menuItems = [
   { icon: Plus, label: '새 문서', href: '/editor', primary: true },
@@ -132,31 +133,33 @@ export default function DashboardSidebar() {
         })}
 
         {/* Template Categories */}
-        <div className="pt-6">
-          <div className="px-3 pb-2">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              빠른 템플릿
-            </h3>
+        {pathname === '/editor' && (
+          <div className="pt-6">
+            <div className="px-3 pb-2">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                빠른 템플릿
+              </h3>
+            </div>
+            <div className="space-y-1">
+              {templateCategories.map((category) => {
+                const Icon = category.icon;
+                return (
+                  <motion.button
+                    key={category.label}
+                    whileHover={{ scale: 1.02 }}
+                    onClick={category.onClick}
+                    className="w-full flex items-center justify-between p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Icon className="w-4 h-4" />
+                      <span className="text-sm">{category.label}</span>
+                    </div>
+                  </motion.button>
+                );
+              })}
+            </div>
           </div>
-          <div className="space-y-1">
-            {templateCategories.map((category) => {
-              const Icon = category.icon;
-              return (
-                <motion.button
-                  key={category.label}
-                  whileHover={{ scale: 1.02 }}
-                  onClick={category.onClick}
-                  className="w-full flex items-center justify-between p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <Icon className="w-4 h-4" />
-                    <span className="text-sm">{category.label}</span>
-                  </div>
-                </motion.button>
-              );
-            })}
-          </div>
-        </div>
+        )}
       </div>
 
       {/* User Profile & Settings */}

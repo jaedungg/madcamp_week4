@@ -389,7 +389,7 @@ export default function RecentDocumentsPage() {
                   className={cn(
                     'px-2.5 py-1.5 text-sm rounded-md transition-all duration-200',
                     timeFilter === option.key
-                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      ? 'bg-accent'
                       : 'text-muted-foreground hover:bg-accent'
                   )}
                 >
