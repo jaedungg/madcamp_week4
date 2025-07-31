@@ -8,7 +8,7 @@
     <tr>
       <td align="center" width="200">
         <a href="https://github.com/jaedungg">
-          <img width="100.116" height="119.232" alt="Image" src="https://github.com/user-attachments/assets/2dcfd2e9-2659-4462-abcb-f16787a21a64" />
+          <img width="120" height="120" alt="Image" src="https://github.com/user-attachments/assets/e0088254-6ae8-455f-9c3f-a6878999689e" />
           <br />
         </a>
       </td>
@@ -36,10 +36,10 @@
     </td>
   </tr>
 </table>
-
 ---
 
 # 프롬 (From)
+
 
 > A Korean AI writing assistant web app built with Next.js, helping you craft natural Korean text for emails, letters, messages, and more—with customizable tones and real-time collaboration.
 
