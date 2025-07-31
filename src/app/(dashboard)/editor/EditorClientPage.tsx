@@ -2,8 +2,9 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Save, Share, MoreHorizontal, Loader2 } from 'lucide-react';
+import { Save, Share, MoreHorizontal, Loader2, FileText } from 'lucide-react';
 import AIEditor from '@/components/editor/AIEditor';
+import LetterExportModal from '@/components/editor/LetterExportModal';
 import { useSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -16,6 +17,7 @@ import {
 import { Editor } from '@tiptap/core';
 import { transformDocument } from '@/lib/transform';
 import { useEditor } from '@/contexts/EditorContext';
+import { htmlToPlainText } from '@/lib/utils';
 
 export default function EditorClientPage() {
   const { data: session } = useSession();
@@ -35,6 +37,8 @@ export default function EditorClientPage() {
   const [aiLoadingType, setAiLoadingType] = useState<string>('');
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [showMoreActions, setShowMoreActions] = useState(false); // Added state for MoreHorizontal dropdown
+  const [showLetterExportModal, setShowLetterExportModal] = useState(false); // Added state for Letter Export Modal
   const editorRef = useRef<Editor | null>(null);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const savingRef = useRef<boolean>(false);
@@ -361,6 +365,41 @@ export default function EditorClientPage() {
     }
   };
 
+  // Gmail로 문서 내용 이동 기능
+  const handleEmailRedirect = () => {
+    try {
+      // 문서 내용이 없는 경우 처리
+      const plainTextContent = htmlToPlainText(content);
+
+      if (!plainTextContent.trim() && documentTitle === '제목 없는 문서') {
+        alert('이메일로 보낼 내용이 없습니다. 먼저 문서를 작성해주세요.');
+        return;
+      }
+
+      // Gmail 작성 URL 구성
+      const subject = documentTitle !== '제목 없는 문서' ? documentTitle : '프롬에서 보낸 문서';
+      const body = plainTextContent || '문서 내용 없음';
+
+      // URL 인코딩
+      const encodedSubject = encodeURIComponent(subject);
+      const encodedBody = encodeURIComponent(body);
+
+      // Gmail 작성 URL 생성
+      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=&su=${encodedSubject}&body=${encodedBody}`;
+
+      // 새 창/탭에서 Gmail 열기
+      const newWindow = window.open(gmailUrl, '_blank', 'noopener,noreferrer');
+
+      if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+        // 팝업이 차단된 경우 사용자에게 알림
+        alert('팝업이 차단되었습니다. 브라우저의 팝업 차단을 해제하고 다시 시도해주세요.');
+      }
+    } catch (error) {
+      console.error('Gmail 리디렉션 오류:', error);
+      alert('Gmail로 이동하는 중 오류가 발생했습니다. 다시 시도해주세요.');
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Top Bar */}
@@ -397,22 +436,57 @@ export default function EditorClientPage() {
             {isSaving ? '저장 중...' : '저장'}
           </motion.button>
 
-          <motion.button
+          {/* <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            onClick={handleEmailRedirect}
             className="flex items-center gap-2 px-3 py-2 text-sm bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors"
           >
             <Share className="w-4 h-4" />
-            공유
-          </motion.button>
+            이메일로 이동
+          </motion.button> */}
 
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="p-2 hover:bg-accent rounded-lg transition-colors"
-          >
-            <MoreHorizontal className="w-4 h-4" />
-          </motion.button>
+          <div className="relative">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowMoreActions(!showMoreActions)}
+              className="p-2 hover:bg-accent rounded-lg transition-colors"
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </motion.button>
+
+            {showMoreActions && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="absolute right-0 top-full mt-1 w-48 bg-card bg-white border border-border rounded-lg shadow-lg z-10"
+              >
+                <div className="py-1">
+                  <button
+                    onClick={() => {
+                      handleEmailRedirect();
+                      setShowMoreActions(false);
+                    }}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-accent"
+                  >
+                    <Share className="w-4 h-4" />
+                    이메일로 이동
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowLetterExportModal(true);
+                      setShowMoreActions(false);
+                    }}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-accent"
+                  >
+                    <FileText className="w-4 h-4" />
+                    편지로 내보내기
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -489,6 +563,15 @@ export default function EditorClientPage() {
           </div>
         </div>
       </div>
+
+      {/* Letter Export Modal */}
+      <LetterExportModal
+        isOpen={showLetterExportModal}
+        onClose={() => setShowLetterExportModal(false)}
+        content={content}
+        title={documentTitle}
+        userId={session?.user?.email || ''}
+      />
     </div>
   );
 }
