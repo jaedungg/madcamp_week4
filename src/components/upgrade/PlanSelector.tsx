@@ -4,7 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Check, Crown, Building2 } from 'lucide-react';
 import { PLAN_PRICING, BillingCycle } from '@/types/payment';
-import { formatPaymentAmount } from '@/lib/tossPayments';
+import { formatPaymentAmount } from '@/lib/payment-utils';
 import { cn } from '@/lib/utils';
 
 interface PlanSelectorProps {

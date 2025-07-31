@@ -485,13 +485,25 @@ export const useSubscriptionStatus = () => useUserStore((state) => ({
 
 // 결제 관련 hooks
 export const useCurrentPaymentOrder = () => useUserStore((state) => state.currentPaymentOrder);
-export const usePaymentActions = () => useUserStore((state) => ({
-  createPaymentOrder: state.createPaymentOrder,
-  setCurrentPaymentOrder: state.setCurrentPaymentOrder,
-  updatePaymentOrderStatus: state.updatePaymentOrderStatus,
-}), shallow);
 
-import { useMemo } from 'react';
+// 개별 결제 액션 hooks (무한 루프 방지)
+export const useCreatePaymentOrder = () => useUserStore((state) => state.createPaymentOrder);
+export const useSetCurrentPaymentOrder = () => useUserStore((state) => state.setCurrentPaymentOrder);
+export const useUpdatePaymentOrderStatus = () => useUserStore((state) => state.updatePaymentOrderStatus);
+
+// 레거시 지원을 위한 hook (사용 비추천 - 무한 루프 위험)
+export const usePaymentActions = () => {
+  const createPaymentOrder = useCreatePaymentOrder();
+  const setCurrentPaymentOrder = useSetCurrentPaymentOrder();
+  const updatePaymentOrderStatus = useUpdatePaymentOrderStatus();
+  
+  return React.useMemo(() => ({
+    createPaymentOrder,
+    setCurrentPaymentOrder,
+    updatePaymentOrderStatus,
+  }), [createPaymentOrder, setCurrentPaymentOrder, updatePaymentOrderStatus]);
+};
+
 
 // 플랜 업그레이드 관련 hooks
 export const useCanUpgrade = () => {
@@ -499,7 +511,7 @@ export const useCanUpgrade = () => {
   const currentPlan = useUserStore(state => state.plan.type);
 
   // currentPlan이 바뀔 때만 객체 재생성
-  return useMemo(() => ({
+  return React.useMemo(() => ({
     canUpgradeToPremium: currentPlan === 'free',
     canUpgradeToEnterprise:
       currentPlan === 'free' || currentPlan === 'premium',

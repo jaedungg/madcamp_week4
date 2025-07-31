@@ -29,12 +29,33 @@ export interface PaymentRequestOptions {
   failUrl?: string;
 }
 
-// TossPayments 결제 위젯 인터페이스
+// TossPayments 결제 위젯 인터페이스 (레거시)
 export interface TossPaymentsWidgets {
   setAmount(amount: PaymentAmount): Promise<void>;
   renderPaymentMethods(options: PaymentMethodOptions): Promise<PaymentMethodWidget>;
   renderAgreement(options: AgreementOptions): Promise<AgreementWidget>;
   requestPayment(options: PaymentRequestOptions): Promise<void>;
+}
+
+// TossPayments 결제창 인터페이스
+export interface TossPaymentsPayment {
+  requestPayment(options: {
+    method: 'CARD' | 'TRANSFER' | 'VIRTUAL_ACCOUNT';
+    amount: PaymentAmount;
+    orderId: string;
+    orderName: string;
+    successUrl: string;
+    failUrl: string;
+    customerEmail?: string;
+    customerName?: string;
+    customerMobilePhone?: string;
+    card?: {
+      useEscrow?: boolean;
+      flowMode?: 'DEFAULT' | 'DIRECT';
+      useCardPoint?: boolean;
+      useAppCardOnly?: boolean;
+    };
+  }): Promise<void>;
 }
 
 export interface PaymentMethodWidget {

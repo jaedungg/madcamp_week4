@@ -4,7 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Crown, Building2, Calendar, CreditCard, Shield } from 'lucide-react';
 import { PLAN_PRICING, BillingCycle, PaymentSummary } from '@/types/payment';
-import { formatPaymentAmount } from '@/lib/tossPayments';
+import { formatPaymentAmount } from '@/lib/payment-utils';
 import { cn } from '@/lib/utils';
 
 interface OrderSummaryProps {

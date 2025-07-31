@@ -1,24 +1,20 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { CreditCard, Shield, AlertTriangle, Loader2 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { 
   initializeTossPayments, 
-  setPaymentAmount, 
-  renderPaymentMethods, 
-  renderAgreement,
-  requestPayment,
-  generateOrderId 
+  requestPaymentWithWindow,
+  generateOrderId,
+  formatPhoneNumberForTossPayments
 } from '@/lib/tossPayments';
 import { 
-  TossPaymentsWidgets, 
-  PaymentMethodWidget, 
-  AgreementWidget,
+  TossPaymentsPayment,
   PaymentSummary 
 } from '@/types/payment';
-import { usePaymentActions } from '@/stores/userStore';
+import { useCreatePaymentOrder } from '@/stores/userStore';
 import { cn } from '@/lib/utils';
 
 interface PaymentWidgetProps {
@@ -35,110 +31,52 @@ export default function PaymentWidget({
   className
 }: PaymentWidgetProps) {
   const { data: session } = useSession();
-  const { createPaymentOrder } = usePaymentActions();
+  const createPaymentOrder = useCreatePaymentOrder();
   
-  const [widgets, setWidgets] = useState<TossPaymentsWidgets | null>(null);
-  const [paymentWidget, setPaymentWidget] = useState<PaymentMethodWidget | null>(null);
-  const [agreementWidget, setAgreementWidget] = useState<AgreementWidget | null>(null);
+  const [payment, setPayment] = useState<TossPaymentsPayment | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
-  const [agreementStatus, setAgreementStatus] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const paymentMethodRef = useRef<HTMLDivElement>(null);
-  const agreementRef = useRef<HTMLDivElement>(null);
   const initializeRef = useRef(false);
+  
+  // 안정적인 값들을 메모이제이션
+  const finalAmount = useMemo(() => paymentSummary.finalAmount, [paymentSummary.finalAmount]);
+  const userId = useMemo(() => session?.user?.id, [session?.user?.id]);
 
-  // TossPayments 초기화
-  useEffect(() => {
+  // TossPayments 초기화 함수를 메모이제이션
+  const initializeTossPaymentsPayment = useCallback(async () => {
     if (initializeRef.current) return;
     initializeRef.current = true;
 
-    const initialize = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
+    try {
+      setIsLoading(true);
+      setError(null);
 
-        const customerKey = session?.user?.id || undefined;
-        const tossWidgets = await initializeTossPayments(customerKey);
-        
-        // 결제 금액 설정
-        await setPaymentAmount(tossWidgets, paymentSummary.finalAmount);
-        
-        setWidgets(tossWidgets);
-      } catch (err) {
-        console.error('TossPayments 초기화 실패:', err);
-        setError('결제 시스템 초기화에 실패했습니다. 페이지를 새로고침해 주세요.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      const customerKey = userId || undefined;
+      const tossPayment = await initializeTossPayments(customerKey);
+      
+      setPayment(tossPayment);
+    } catch (err) {
+      console.error('TossPayments 초기화 실패:', err);
+      setError('결제 시스템 초기화에 실패했습니다. 페이지를 새로고침해 주세요.');
+      initializeRef.current = false; // 실패 시 재시도 가능하도록
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId]);
 
-    initialize();
-  }, [paymentSummary.finalAmount, session?.user?.id]);
-
-  // 결제 UI 렌더링
+  // TossPayments 초기화
   useEffect(() => {
-    if (!widgets || isLoading) return;
+    initializeTossPaymentsPayment();
+  }, [initializeTossPaymentsPayment]);
 
-    const renderWidgets = async () => {
-      try {
-        // 결제 수단 위젯 렌더링
-        if (paymentMethodRef.current) {
-          const paymentMethodWidget = await renderPaymentMethods(
-            widgets,
-            '#payment-method'
-          );
-          
-          // 결제 수단 선택 이벤트 리스너
-          paymentMethodWidget.on('paymentMethodSelect', (method) => {
-            console.log('결제 수단 선택:', method);
-            setSelectedPaymentMethod(method.code);
-          });
-          
-          setPaymentWidget(paymentMethodWidget);
-        }
-
-        // 약관 위젯 렌더링
-        if (agreementRef.current) {
-          const agreementWidget = await renderAgreement(
-            widgets,
-            '#agreement'
-          );
-          
-          // 약관 동의 상태 이벤트 리스너
-          agreementWidget.on('agreementStatusChange', (status) => {
-            console.log('약관 동의 상태:', status);
-            setAgreementStatus(status.agreedRequiredTerms);
-          });
-          
-          setAgreementWidget(agreementWidget);
-        }
-      } catch (err) {
-        console.error('결제 위젯 렌더링 실패:', err);
-        setError('결제 화면 로딩에 실패했습니다.');
-      }
-    };
-
-    renderWidgets();
-
-    // 컴포넌트 언마운트 시 위젯 정리
-    return () => {
-      paymentWidget?.destroy();
-      agreementWidget?.destroy();
-    };
-  }, [widgets, isLoading]);
+  // 결제창 방식에서는 UI 렌더링이 필요하지 않습니다.
 
   // 결제 실행
   const handlePayment = async () => {
-    if (!widgets || !session?.user) {
+    if (!payment || !session?.user) {
       setError('사용자 인증이 필요합니다.');
-      return;
-    }
-
-    if (!agreementStatus) {
-      setError('약관에 동의해주세요.');
       return;
     }
 
@@ -153,12 +91,18 @@ export default function PaymentWidget({
         paymentSummary.finalAmount
       );
 
-      // 결제 요청
-      await requestPayment(widgets, {
+      // 결제창 열기
+      await requestPaymentWithWindow(payment, {
+        method: 'CARD',
+        amount: {
+          currency: 'KRW',
+          value: finalAmount,
+        },
         orderId,
         orderName: `${paymentSummary.planType === 'premium' ? '프리미엄' : '엔터프라이즈'} 플랜 구독`,
         customerEmail: session.user.email || '',
         customerName: session.user.name || '',
+        customerMobilePhone: formatPhoneNumberForTossPayments(session.user.phone),
         successUrl: `${window.location.origin}/upgrade/success`,
         failUrl: `${window.location.origin}/upgrade/failure`,
       });
@@ -227,34 +171,26 @@ export default function PaymentWidget({
           <span>TossPayments의 보안 결제 시스템으로 안전하게 보호됩니다</span>
         </div>
 
-        {/* 결제 수단 선택 */}
-        <div>
-          <h4 className="text-sm font-medium text-foreground mb-3">결제 수단 선택</h4>
-          <div 
-            id="payment-method" 
-            ref={paymentMethodRef}
-            className="min-h-[200px] border border-border rounded-lg"
-          />
-        </div>
-
-        {/* 약관 동의 */}
-        <div>
-          <h4 className="text-sm font-medium text-foreground mb-3">약관 동의</h4>
-          <div 
-            id="agreement" 
-            ref={agreementRef}
-            className="border border-border rounded-lg"
-          />
+        {/* 결제창 안내 */}
+        <div className="text-center py-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
+            <CreditCard className="w-8 h-8 text-primary" />
+          </div>
+          <h4 className="text-lg font-semibold text-foreground mb-2">간편한 결제 진행</h4>
+          <p className="text-sm text-muted-foreground mb-6">
+            '결제하기' 버튼을 누르면 보안 결제창이 열립니다.<br />
+            카드, 계좌이체, 간편결제 등 다양한 결제 수단을 선택할 수 있습니다.
+          </p>
         </div>
 
         {/* 결제 버튼 */}
         <div className="pt-4">
           <button
             onClick={handlePayment}
-            disabled={!agreementStatus || isProcessing}
+            disabled={isProcessing}
             className={cn(
               'w-full py-4 px-6 rounded-lg font-semibold text-lg transition-all',
-              agreementStatus && !isProcessing
+              !isProcessing
                 ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-md'
                 : 'bg-muted text-muted-foreground cursor-not-allowed'
             )}
@@ -268,12 +204,6 @@ export default function PaymentWidget({
               `${paymentSummary.finalAmount.toLocaleString()}원 결제하기`
             )}
           </button>
-
-          {!agreementStatus && (
-            <p className="text-xs text-muted-foreground text-center mt-2">
-              결제를 진행하려면 약관에 동의해주세요.
-            </p>
-          )}
         </div>
 
         {/* 추가 정보 */}
@@ -281,6 +211,7 @@ export default function PaymentWidget({
           <p>• 결제 후 즉시 서비스를 이용할 수 있습니다.</p>
           <p>• 30일 무료 체험 기간 동안 언제든지 취소 가능합니다.</p>
           <p>• 문의사항이 있으시면 고객지원팀으로 연락해주세요.</p>
+          <p>• 결제창에서 약관 동의 후 결제를 진행해주세요.</p>
         </div>
       </div>
     </motion.div>

@@ -10,7 +10,7 @@ import OrderSummary from '@/components/upgrade/OrderSummary';
 import PaymentWidget from '@/components/upgrade/PaymentWidget';
 import LoadingSpinner from '@/components/upgrade/LoadingSpinner';
 import { BillingCycle, PaymentSummary } from '@/types/payment';
-import { createPaymentSummary } from '@/lib/tossPayments';
+import { createPaymentSummary } from '@/lib/payment-utils';
 import { useUserPlan, useCanUpgrade } from '@/stores/userStore';
 import { useHasHydrated } from '@/stores/userStore';
 
@@ -40,21 +40,21 @@ export default function UpgradePage() {
     return createPaymentSummary(selectedPlan, selectedBillingCycle, discountPercent);
   }, [selectedPlan, selectedBillingCycle]);
 
-  // Conditional loading/hydration check
-  if (status === 'loading' || !mounted || !hasHydrated) { // Modified condition
-    return (
-      <div className="flex flex-col h-full">
-        <div className="flex-1 p-6">
-          <div className="max-w-6xl mx-auto">
-            <LoadingSpinner
-              title="계정 정보 확인 중..."
-              message="잠시만 기다려주세요."
-            />
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // // Conditional loading/hydration check
+  // if (status === 'loading' || !mounted || !hasHydrated) { // Modified condition
+  //   return (
+  //     <div className="flex flex-col h-full">
+  //       <div className="flex-1 p-6">
+  //         <div className="max-w-6xl mx-auto">
+  //           <LoadingSpinner
+  //             title="계정 정보 확인 중..."
+  //             message="잠시만 기다려주세요."
+  //           />
+  //         </div>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   // 인증되지 않은 사용자 (useEffect에서 처리되므로 여기서는 null 반환만)
   if (!session) {

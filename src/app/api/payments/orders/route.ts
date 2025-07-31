@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-import { generateOrderId, calculatePlanAmount } from '@/lib/tossPayments';
+import { generateOrderId, calculatePlanAmount } from '@/lib/payment-utils';
 import { CreatePaymentOrderRequest, CreatePaymentOrderResponse } from '@/types/payment';
 
 // 요청 검증 스키마

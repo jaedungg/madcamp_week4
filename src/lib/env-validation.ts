@@ -11,10 +11,12 @@ export interface EnvironmentConfig {
   NEXTAUTH_SECRET: string;
   NEXTAUTH_URL?: string;
   
-  // TossPayments
-  TOSS_CLIENT_KEY: string;
+  // TossPayments (서버사이드)
   TOSS_SECRET_KEY: string;
   TOSS_WEBHOOK_SECRET: string;
+  
+  // TossPayments (클라이언트사이드)
+  NEXT_PUBLIC_TOSS_CLIENT_KEY?: string;
   
   // Google AI
   GOOGLE_API_KEY: string;
@@ -28,16 +30,22 @@ export interface EnvironmentConfig {
 }
 
 /**
- * 필수 환경변수 목록
+ * 필수 환경변수 목록 (서버사이드)
  */
 const REQUIRED_ENV_VARS: (keyof EnvironmentConfig)[] = [
   'DATABASE_URL',
   'NEXTAUTH_SECRET',
-  'TOSS_CLIENT_KEY',
   'TOSS_SECRET_KEY',
   'TOSS_WEBHOOK_SECRET',
   'GOOGLE_API_KEY',
   'NODE_ENV',
+];
+
+/**
+ * 클라이언트사이드 필수 환경변수
+ */
+const CLIENT_REQUIRED_ENV_VARS: string[] = [
+  'NEXT_PUBLIC_TOSS_CLIENT_KEY',
 ];
 
 /**
@@ -77,6 +85,16 @@ export function validateEnvironmentVariables(): EnvironmentConfig {
     });
   }
   
+  // 클라이언트사이드 환경변수 검사
+  CLIENT_REQUIRED_ENV_VARS.forEach((varName) => {
+    const value = process.env[varName];
+    if (!value || value.trim() === '') {
+      missingVars.push(varName);
+    } else {
+      (config as any)[varName] = value;
+    }
+  });
+  
   // 선택적 변수들 추가
   if (process.env.OPENAI_API_KEY) {
     config.OPENAI_API_KEY = process.env.OPENAI_API_KEY;
@@ -103,7 +121,7 @@ ${missingVars.map(varName => `${varName}=your_value_here`).join('\n')}
 환경변수 설정 가이드:
 - DATABASE_URL: PostgreSQL 연결 문자열
 - NEXTAUTH_SECRET: NextAuth.js용 랜덤 시크릿 키
-- TOSS_CLIENT_KEY: TossPayments 클라이언트 키
+- NEXT_PUBLIC_TOSS_CLIENT_KEY: TossPayments 클라이언트 키 (클라이언트사이드)
 - TOSS_SECRET_KEY: TossPayments 서버 시크릿 키
 - TOSS_WEBHOOK_SECRET: TossPayments 웹훅 시크릿
 - GOOGLE_API_KEY: Google Gemini API 키
@@ -136,9 +154,11 @@ function validateEnvironmentValues(config: EnvironmentConfig): void {
     errors.push('NEXTAUTH_SECRET은 최소 32자 이상이어야 합니다');
   }
   
-  // TossPayments 키 형식 검증
-  if (!config.TOSS_CLIENT_KEY.startsWith('test_ck_') && !config.TOSS_CLIENT_KEY.startsWith('live_ck_')) {
-    errors.push('TOSS_CLIENT_KEY가 올바른 형식이 아닙니다 (test_ck_ 또는 live_ck_로 시작해야 함)');
+  // TossPayments 클라이언트 키 형식 검증
+  if (config.NEXT_PUBLIC_TOSS_CLIENT_KEY) {
+    if (!config.NEXT_PUBLIC_TOSS_CLIENT_KEY.startsWith('test_ck_') && !config.NEXT_PUBLIC_TOSS_CLIENT_KEY.startsWith('live_ck_')) {
+      errors.push('NEXT_PUBLIC_TOSS_CLIENT_KEY가 올바른 형식이 아닙니다 (test_ck_ 또는 live_ck_로 시작해야 함)');
+    }
   }
   
   if (!config.TOSS_SECRET_KEY.startsWith('test_sk_') && !config.TOSS_SECRET_KEY.startsWith('live_sk_')) {
@@ -147,8 +167,8 @@ function validateEnvironmentValues(config: EnvironmentConfig): void {
   
   // 프로덕션 환경에서 테스트 키 사용 금지
   if (config.NODE_ENV === 'production') {
-    if (config.TOSS_CLIENT_KEY.startsWith('test_')) {
-      errors.push('프로덕션 환경에서는 테스트 키를 사용할 수 없습니다 (TOSS_CLIENT_KEY)');
+    if (config.NEXT_PUBLIC_TOSS_CLIENT_KEY && config.NEXT_PUBLIC_TOSS_CLIENT_KEY.startsWith('test_')) {
+      errors.push('프로덕션 환경에서는 테스트 키를 사용할 수 없습니다 (NEXT_PUBLIC_TOSS_CLIENT_KEY)');
     }
     if (config.TOSS_SECRET_KEY.startsWith('test_')) {
       errors.push('프로덕션 환경에서는 테스트 키를 사용할 수 없습니다 (TOSS_SECRET_KEY)');

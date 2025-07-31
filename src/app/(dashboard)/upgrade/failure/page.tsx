@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { XCircle, ArrowLeft, RefreshCw, HelpCircle, Phone, Mail } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { LoadingCard } from '@/components/upgrade/LoadingSpinner';
-import { getKoreanErrorMessage } from '@/lib/tossPayments';
+import { getKoreanErrorMessage } from '@/lib/payment-utils';
 
 function FailurePageContent() {
   const router = useRouter();

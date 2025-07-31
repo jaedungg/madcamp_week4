@@ -8,7 +8,7 @@ import { useSession } from 'next-auth/react';
 import { LoadingCard } from '@/components/upgrade/LoadingSpinner';
 import { ConfirmPaymentResponse } from '@/types/payment';
 import { useSetUserSubscription, PLAN_TEMPLATES } from '@/stores/userStore';
-import { formatPaymentAmount } from '@/lib/tossPayments';
+import { formatPaymentAmount } from '@/lib/payment-utils';
 
 function SuccessPageContent() {
   const router = useRouter();
