@@ -97,7 +97,6 @@ async function generateCSVFile(
   filePath: string,
   options: ExportOptions
 ): Promise<number> {
-  import { createObjectCsvWriter } from 'csv-writer';
 
   const headers = [
     { id: 'id', title: 'ID' },
@@ -288,12 +287,12 @@ function generatePDFHTML(documents: Document[], options: ExportOptions): string 
         <h1>문서 내보내기</h1>
         <div class="meta">
           내보낸 날짜: ${now.toLocaleDateString('ko-KR', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          })} | 총 ${documents.length}개 문서
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })} | 총 ${documents.length}개 문서
         </div>
       </div>
       
