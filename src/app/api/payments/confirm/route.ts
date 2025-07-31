@@ -6,8 +6,10 @@ import { z } from 'zod';
 import { PLAN_TEMPLATES } from '@/stores/userStore';
 import { ConfirmPaymentRequest, ConfirmPaymentResponse } from '@/types/payment';
 
+import { getEnvVar } from '@/lib/env-validation';
+
 // TossPayments 서버 API 설정
-const TOSS_SECRET_KEY = process.env.TOSS_SECRET_KEY || '';
+const TOSS_SECRET_KEY = getEnvVar('TOSS_SECRET_KEY');
 const TOSS_API_BASE_URL = 'https://api.tosspayments.com/v1';
 
 // 요청 검증 스키마
@@ -118,8 +120,18 @@ export async function POST(req: NextRequest) {
       
       // 2. 구독 생성 또는 업데이트
       const planType = paymentOrder.plan_type as 'premium' | 'enterprise';
+      
+      // 주문명에서 결제 주기 추출 (임시 해결방안)
+      const isYearly = paymentOrder.toss_order_name?.includes('연간') ?? false;
       const expiresAt = new Date();
-      expiresAt.setMonth(expiresAt.getMonth() + 1); // 1개월 후 만료 (월간 구독 기준)
+      
+      if (isYearly) {
+        // 연간 구독: 1년 후 만료
+        expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+      } else {
+        // 월간 구독: 1개월 후 만료
+        expiresAt.setMonth(expiresAt.getMonth() + 1);
+      }
       
       // 기존 구독 확인
       const existingSubscription = await prisma.subscriptions.findFirst({

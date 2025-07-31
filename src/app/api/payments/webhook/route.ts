@@ -3,7 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { verifyWebhookSignature } from '@/lib/tossPayments';
 import { TossPaymentsWebhookData } from '@/types/payment';
 
-const TOSS_WEBHOOK_SECRET = process.env.TOSS_WEBHOOK_SECRET || '';
+import { getEnvVar } from '@/lib/env-validation';
+
+const TOSS_WEBHOOK_SECRET = getEnvVar('TOSS_WEBHOOK_SECRET');
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,16 +21,17 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // 서명 검증 (개발 환경에서는 스킵)
-    if (process.env.NODE_ENV === 'production' && TOSS_WEBHOOK_SECRET) {
-      const isValidSignature = verifyWebhookSignature(signature, body, TOSS_WEBHOOK_SECRET);
-      if (!isValidSignature) {
-        console.error('유효하지 않은 웹훅 서명입니다.');
-        return NextResponse.json(
-          { error: '유효하지 않은 웹훅 서명입니다.' },
-          { status: 401 }
-        );
-      }
+    // 웹훅 서명 검증 (모든 환경에서 필수)
+    const isValidSignature = verifyWebhookSignature(signature, body, TOSS_WEBHOOK_SECRET);
+    if (!isValidSignature) {
+      console.error('유효하지 않은 웹훅 서명입니다.', {
+        timestamp: new Date().toISOString(),
+        signature: signature?.substring(0, 10) + '...' // 보안을 위해 일부만 로깅
+      });
+      return NextResponse.json(
+        { error: '유효하지 않은 웹훅 서명입니다.' },
+        { status: 401 }
+      );
     }
     
     // 웹훅 데이터 파싱
@@ -38,7 +41,47 @@ export async function POST(req: NextRequest) {
       eventType: webhookData.eventType,
       orderId: webhookData.data.orderId,
       status: webhookData.data.status,
+      paymentKey: webhookData.data.paymentKey,
     });
+
+    // 중복 웹훅 처리 방지 - 멱등성 검사
+    const idempotencyKey = `${webhookData.eventType}_${webhookData.data.paymentKey}_${webhookData.data.status}`;
+    
+    // 기존 결제 주문에서 이미 이 상태로 처리되었는지 확인
+    const existingOrder = await prisma.payment_orders.findUnique({
+      where: { order_id: webhookData.data.orderId }
+    });
+    
+    if (existingOrder) {
+      // 이미 동일한 상태로 처리된 경우 중복 처리 방지
+      const currentTossStatus = webhookData.data.status;
+      let expectedInternalStatus: string;
+      
+      switch (currentTossStatus) {
+        case 'DONE':
+          expectedInternalStatus = 'paid';
+          break;
+        case 'CANCELED':
+        case 'PARTIAL_CANCELED':
+          expectedInternalStatus = 'canceled';
+          break;
+        case 'ABORTED':
+        case 'EXPIRED':
+          expectedInternalStatus = 'failed';
+          break;
+        default:
+          expectedInternalStatus = 'pending';
+      }
+      
+      if (existingOrder.status === expectedInternalStatus && existingOrder.payment_key === webhookData.data.paymentKey) {
+        console.log('중복 웹훅 감지 - 이미 처리됨:', {
+          orderId: webhookData.data.orderId,
+          status: expectedInternalStatus,
+          paymentKey: webhookData.data.paymentKey
+        });
+        return NextResponse.json({ success: true, message: 'Already processed' });
+      }
+    }
     
     // 이벤트 타입별 처리
     switch (webhookData.eventType) {
@@ -93,9 +136,13 @@ async function handlePaymentStatusChange(data: TossPaymentsWebhookData['data']) 
         internalStatus = 'pending';
     }
     
-    // 이미 처리된 상태인지 확인
-    if (paymentOrder.status === internalStatus) {
-      console.log('이미 처리된 결제 상태:', orderId, internalStatus);
+    // 이미 처리된 상태인지 확인 (멱등성 보장)
+    if (paymentOrder.status === internalStatus && paymentOrder.payment_key === paymentKey) {
+      console.log('이미 처리된 결제 상태 - 중복 처리 방지:', {
+        orderId,
+        status: internalStatus,
+        paymentKey
+      });
       return;
     }
     
@@ -149,9 +196,17 @@ async function handleSuccessfulPayment(paymentOrder: any, prisma: any) {
     const userId = paymentOrder.user_id;
     const planType = paymentOrder.plan_type as 'premium' | 'enterprise';
     
-    // 만료일 계산 (월간 구독 기준)
+    // 주문명에서 결제 주기 추출하여 만료일 계산
+    const isYearly = paymentOrder.toss_order_name?.includes('연간') ?? false;
     const expiresAt = new Date();
-    expiresAt.setMonth(expiresAt.getMonth() + 1);
+    
+    if (isYearly) {
+      // 연간 구독: 1년 후 만료
+      expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+    } else {
+      // 월간 구독: 1개월 후 만료
+      expiresAt.setMonth(expiresAt.getMonth() + 1);
+    }
     
     // 기존 활성 구독 확인
     const existingSubscription = await prisma.subscriptions.findFirst({

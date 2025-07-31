@@ -402,7 +402,7 @@ export const useUserStore = create<UserState>()(
         plan: state.plan,
         stats: {
           ...state.stats,
-          lastActivity: state.stats.lastActivity.toISOString(),
+          lastActivity: new Date(state.stats.lastActivity).toISOString(),
         },
         subscription: state.subscription ? {
           ...state.subscription,

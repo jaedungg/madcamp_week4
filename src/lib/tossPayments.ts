@@ -12,12 +12,10 @@ import {
   PaymentSummary
 } from '@/types/payment';
 
-// TossPayments 클라이언트 키 (환경변수에서 가져오기)
-const TOSS_CLIENT_KEY = process.env.TOSS_CLIENT_KEY || '';
+import { getEnvVar } from './env-validation';
 
-if (!TOSS_CLIENT_KEY) {
-  console.warn('TOSS_CLIENT_KEY가 설정되지 않았습니다. .env 파일을 확인해주세요.');
-}
+// TossPayments 클라이언트 키 (환경변수에서 가져오기)
+const TOSS_CLIENT_KEY = getEnvVar('TOSS_CLIENT_KEY');
 
 /**
  * TossPayments SDK 초기화
@@ -297,7 +295,7 @@ export function verifyWebhookSignature(
 
 // 개발 환경에서 사용할 테스트 설정
 export const TOSS_TEST_CONFIG = {
-  clientKey: 'test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoqo56',
+  // 테스트 카드 번호들 (TossPayments 공식 문서에서 제공)
   testCardNumbers: {
     success: '4242424242424242',
     failure: '4000000000000002',
